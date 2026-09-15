@@ -20,8 +20,22 @@
       allowLocalhostAsSecureOrigin: true,
       autoResubscribe: true,
       notifyButton: { enable: false },
-      serviceWorkerParam: { scope: "/farah-app/" },
-      serviceWorkerPath: "/farah-app/OneSignalSDKWorker.js"
+      serviceWorkerParam: { scope: "/wslnycash/" },
+      serviceWorkerPath: "/wslnycash/OneSignalSDKWorker.js",
+      promptOptions: {
+        slidedown: {
+          prompts: [{
+            type: "push",
+            autoPrompt: true,
+            text: {
+              actionMessage: "نفعّل الإشعارات عشان يوصلك كل جديد؟",
+              acceptButton: "موافق",
+              cancelButton: "لاحقاً"
+            },
+            delay: { pageViews: 1, timeDelay: 5 }
+          }]
+        }
+      }
     });
   });
 </script>
@@ -2028,7 +2042,7 @@ window.playMerchantCustomSound = function() {
             let registration = null;
             if ('serviceWorker' in navigator) {
                 try {
-                    registration = await navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/farah-app/' });
+                    registration = await navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/wslnycash/' });
                 } catch (swErr) { console.error('SW error:', swErr); }
             }
             const tokenOptions = { vapidKey: 'BHlaSnheargWsxUa5b18VBog6KSq778kZ398P5drxS0tUwsUdUy8I0ADAzRO6CS3BJKNmZTfjBzG_Fv6gIBOuwI' };
