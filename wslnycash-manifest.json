@@ -2,9 +2,9 @@
   "name": "وصلني كاش",
   "short_name": "وصلني كاش",
   "description": "منصة وسيطة آمنة لتوفير السيولة النقدية",
-  "id": "/farah-app/",
-  "start_url": "/farah-app/wslnycash.html",
-  "scope": "/farah-app/",
+  "id": "/wslnycash/",
+  "start_url": "/wslnycash/wslnycash.html",
+  "scope": "/wslnycash/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0A1F3C",
@@ -14,36 +14,22 @@
   "categories": ["finance", "business"],
   "icons": [
     {
-      "src": "/farah-app/icon.png",
+      "src": "/wslnycash/icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/farah-app/icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/farah-app/icon.png",
+      "src": "/wslnycash/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/farah-app/icon.png",
+      "src": "/wslnycash/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/farah-app/icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "label": "شاشة التطبيق"
     }
   ]
 }
