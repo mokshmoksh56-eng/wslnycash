@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.moksh.wslnycash",
+      "sha256_cert_fingerprints": [
+        "21:0E:A0:9D:0D:40:DF:27:7A:DE:A2:54:E1:C8:61:2B:8F:A5:78:86:E5:1A:41:81:83:63:44:68:93:53:C4:AE"
+      ]
+    }
+  }
+]
