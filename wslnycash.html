@@ -10,36 +10,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="manifest" href="wslnycash-manifest.json">
 
-<!-- 🚀 OneSignal Push Notifications (Web Push) -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "7dd59624-d56e-47aa-b195-de1badc2cca2",
-      allowLocalhostAsSecureOrigin: true,
-      autoResubscribe: true,
-      notifyButton: { enable: false },
-      serviceWorkerParam: { scope: "/wslnycash/" },
-      serviceWorkerPath: "/wslnycash/OneSignalSDKWorker.js",
-      promptOptions: {
-        slidedown: {
-          prompts: [{
-            type: "push",
-            autoPrompt: true,
-            text: {
-              actionMessage: "نفعّل الإشعارات عشان يوصلك كل جديد؟",
-              acceptButton: "موافق",
-              cancelButton: "لاحقاً"
-            },
-            delay: { pageViews: 1, timeDelay: 5 }
-          }]
-        }
-      }
-    });
-  });
-</script>
-<!-- نهاية OneSignal -->
+<!-- 🚀 تم إلغاء OneSignal — الإشعارات تعمل الآن عبر Firebase FCM فقط -->
 
 <meta name="theme-color" content="#17477E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2035,6 +2006,10 @@ window.playMerchantCustomSound = function() {
     window.requestPushPermissions = async function(userType, phone) {
         try {
             if (!('Notification' in window)) return;
+            if (Notification.permission === 'denied') {
+                console.log('⚠️ المستخدم رفض الإشعارات مسبقاً. يتم التخطي.');
+                return;
+            }
             if (Notification.permission !== 'granted') {
                 const perm = await Notification.requestPermission();
                 if (perm !== 'granted') return;
