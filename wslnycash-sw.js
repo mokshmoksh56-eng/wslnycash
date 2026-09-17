@@ -6,7 +6,7 @@
 // ✅ استدعاء مكتبة OneSignal أول سطر
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'wslny-cash-v4';
+const CACHE_NAME = 'wslny-cash-v5';
 const urlsToCache = [
     './wslnycash.html',
     './wslnycash-manifest.json',
