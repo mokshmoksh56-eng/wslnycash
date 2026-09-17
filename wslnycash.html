@@ -10,7 +10,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="manifest" href="wslnycash-manifest.json">
 
-<!-- 🚀 تم إلغاء OneSignal — الإشعارات تعمل الآن عبر Firebase FCM فقط -->
+<!-- 🚀 OneSignal Web SDK v16 -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <meta name="theme-color" content="#17477E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -825,6 +826,95 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
         </div>
     </div>
 </div>
+
+<!-- ============================================================
+     🚀 OneSignal Initialization
+     ============================================================ -->
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+  // ⚙️ ضع هنا App ID الخاص بك من لوحة تحكم OneSignal
+  const ONESIGNAL_APP_ID = "YOUR_ONESIGNAL_APP_ID";
+
+  OneSignalDeferred.push(async function(OneSignal) {
+    try {
+      await OneSignal.init({
+        appId: ONESIGNAL_APP_ID,
+        allowLocalhostAsSecureOrigin: true,
+        serviceWorkerPath: 'OneSignalSDKWorker.js',
+        serviceWorkerParam: { scope: '/wslnycash/' },
+        notifyButton: { enable: false },
+        welcomeNotification: {
+          title: "وصلني كاش",
+          message: "تم تفعيل الإشعارات بنجاح ✔️"
+        },
+        promptOptions: {
+          slidedown: {
+            prompts: [{
+              type: "push",
+              autoPrompt: true,
+              text: {
+                actionMessage: "نريد إرسال إشعارات فورية لك عند وصول طلب جديد أو قبول عرض.",
+                acceptButton: "موافق",
+                cancelButton: "لاحقاً"
+              },
+              delay: { pageViews: 1, timeDelay: 5 }
+            }]
+          }
+        }
+      });
+
+      console.log('✅ OneSignal initialized');
+
+      // 📩 معالج الضغط على الإشعار
+      OneSignal.Notifications.addEventListener('click', (event) => {
+        try {
+          const data = event.notification.additionalData || {};
+          if (data.type === 'new_order') {
+            if (window.showView) window.showView('merchantDashboardView');
+          } else if (data.type === 'order_accepted' || data.type === 'order_completed') {
+            if (window.fetchCustomerPendingOrders) window.fetchCustomerPendingOrders();
+          } else if (data.type === 'subscription') {
+            if (window.showView) window.showView('merchantSubscriptionView');
+          }
+        } catch (err) { console.warn('OneSignal click error:', err); }
+      });
+
+      // 🔔 إذن الإشعارات
+      OneSignal.Notifications.addEventListener('permissionChange', (granted) => {
+        console.log('OneSignal permission:', granted);
+      });
+    } catch (err) {
+      console.warn('⚠️ OneSignal init error:', err);
+    }
+  });
+
+  // 🧩 دوال مساعدة للربط مع Firebase
+  window.oneSignalLogin = function(externalId, tags) {
+    try {
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.login(externalId);
+          if (tags && typeof tags === 'object') {
+            await OneSignal.User.addTags(tags);
+          }
+          console.log('✅ OneSignal login:', externalId, tags);
+        } catch (err) { console.warn('OneSignal login error:', err); }
+      });
+    } catch (e) { console.warn('oneSignalLogin outer error:', e); }
+  };
+
+  window.oneSignalLogout = function() {
+    try {
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.logout();
+          console.log('✅ OneSignal logout');
+        } catch (err) { console.warn('OneSignal logout error:', err); }
+      });
+    } catch (e) { console.warn('oneSignalLogout outer error:', e); }
+  };
+</script>
 
 <script>
     const MAPBOX_TOKEN = "pk.eyJ1IjoibW9rc2htb2tzaCIsImEiOiJjbXRyZXF5cXkwMWRhMnlzaDI0OXJiNXQ1In0.X30BmuAkJ69jOlicXZK53A";
@@ -1692,6 +1782,7 @@ window.playMerchantCustomSound = function() {
         window.currentActiveMerchantData = null;
         window.notifiedOrders.clear();
         if (window.clearAllPendingToasts) window.clearAllPendingToasts();
+        if (window.oneSignalLogout) window.oneSignalLogout();
         alert("⚠️ تم تسجيل الدخول لحسابك من جهاز آخر.\n\nسيتم تسجيل خروجك من هذا الجهاز الآن.");
         if (window.showView) window.showView('roleView');
     };
@@ -1705,6 +1796,7 @@ window.playMerchantCustomSound = function() {
         localStorage.removeItem('eqbad_customer_session');
         window.currentCustomerPhone = "";
         window.currentCustomerName = "";
+        if (window.oneSignalLogout) window.oneSignalLogout();
         alert("⚠️ تم تسجيل الدخول لحسابك من جهاز آخر.\n\nسيتم تسجيل خروجك من هذا الجهاز الآن.");
         if (window.showView) window.showView('roleView');
     };
@@ -2117,6 +2209,14 @@ window.playMerchantCustomSound = function() {
                     await update(ref(db, 'eqbad_merchants/' + mKey), { current_session: mySession });
                     window.currentMerchantPhone = window.normalizePhone(savedMerchantPhone);
                     window.currentMerchantKey = mKey;
+                    // 🚀 OneSignal: ربط التاجر
+                    if (window.oneSignalLogin) {
+                        window.oneSignalLogin('merchant_' + window.currentMerchantPhone, {
+                            role: 'merchant',
+                            store_name: mData.name || '',
+                            phone: window.currentMerchantPhone
+                        });
+                    }
                     window.requestPushPermissions('merchant', window.currentMerchantPhone);
                     window.renderMerchantDashboard(mData);
                     window.listenToOrders();
@@ -2147,6 +2247,14 @@ window.playMerchantCustomSound = function() {
                 await update(ref(db, 'eqbad_customers/customer_' + custPhone), { current_session: mySession });
                 window.currentCustomerPhone = custPhone;
                 window.currentCustomerName = savedCustomerName || cData.name || "عميل مسجل";
+                // 🚀 OneSignal: ربط العميل
+                if (window.oneSignalLogin) {
+                    window.oneSignalLogin('customer_' + custPhone, {
+                        role: 'customer',
+                        name: window.currentCustomerName,
+                        phone: custPhone
+                    });
+                }
                 window.requestPushPermissions('customer', custPhone);
                 document.getElementById('custProfileName').innerText = window.currentCustomerName;
                 document.getElementById('custProfilePhone').innerText = custPhone;
@@ -2194,6 +2302,10 @@ window.playMerchantCustomSound = function() {
             window.currentCustomerName = name;
             localStorage.setItem('eqbad_customer_phone', phone);
             localStorage.setItem('eqbad_customer_name', name);
+            // 🚀 OneSignal: ربط العميل الجديد
+            if (window.oneSignalLogin) {
+                window.oneSignalLogin('customer_' + phone, { role: 'customer', name: name, phone: phone });
+            }
             window.requestPushPermissions('customer', phone);
             document.getElementById('custProfileName').innerText = name;
             document.getElementById('custProfilePhone').innerText = phone;
@@ -2226,6 +2338,14 @@ window.playMerchantCustomSound = function() {
                 window.currentCustomerName = snap.val().name;
                 localStorage.setItem('eqbad_customer_phone', phone);
                 localStorage.setItem('eqbad_customer_name', window.currentCustomerName);
+                // 🚀 OneSignal: ربط العميل
+                if (window.oneSignalLogin) {
+                    window.oneSignalLogin('customer_' + phone, {
+                        role: 'customer',
+                        name: window.currentCustomerName,
+                        phone: phone
+                    });
+                }
                 window.requestPushPermissions('customer', phone);
                 document.getElementById('custProfileName').innerText = window.currentCustomerName;
                 document.getElementById('custProfilePhone').innerText = window.currentCustomerPhone;
@@ -2249,6 +2369,8 @@ window.playMerchantCustomSound = function() {
         localStorage.removeItem('eqbad_customer_session');
         window.currentCustomerPhone = "";
         window.currentCustomerName = "";
+        // 🚀 OneSignal: فصل المستخدم
+        if (window.oneSignalLogout) window.oneSignalLogout();
         showView('roleView');
     };
 
@@ -2298,6 +2420,14 @@ window.playMerchantCustomSound = function() {
             window.currentMerchantKey = mKey;
             localStorage.setItem('eqbad_merchant_phone', phone);
             localStorage.setItem('eqbad_merchant_key', mKey);
+            // 🚀 OneSignal: ربط التاجر الجديد
+            if (window.oneSignalLogin) {
+                window.oneSignalLogin('merchant_' + phone, {
+                    role: 'merchant',
+                    store_name: storeName,
+                    phone: phone
+                });
+            }
             window.requestPushPermissions('merchant', phone);
             btn.innerHTML = "تأكيد وتفعيل الحساب ✔️"; btn.disabled = false;
             window.renderMerchantDashboard(merchantData);
@@ -2330,6 +2460,14 @@ window.playMerchantCustomSound = function() {
                 window.currentMerchantKey = actualKey;
                 localStorage.setItem('eqbad_merchant_phone', phone);
                 localStorage.setItem('eqbad_merchant_key', actualKey);
+                // 🚀 OneSignal: ربط التاجر
+                if (window.oneSignalLogin) {
+                    window.oneSignalLogin('merchant_' + phone, {
+                        role: 'merchant',
+                        store_name: snap.val().name || '',
+                        phone: phone
+                    });
+                }
                 window.requestPushPermissions('merchant', phone);
                 window.renderMerchantDashboard(snap.val());
                 window.listenToOrders();
@@ -2356,6 +2494,8 @@ window.playMerchantCustomSound = function() {
         window.notifiedOrders.clear();
         window.clearAllPendingToasts();
         if (window.clearPaymentImage) window.clearPaymentImage();
+        // 🚀 OneSignal: فصل المستخدم
+        if (window.oneSignalLogout) window.oneSignalLogout();
         showView('roleView');
     };
 
