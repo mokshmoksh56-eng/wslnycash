@@ -1,23 +1,2 @@
-/* ==========================================================
-   ملف OneSignalSDKWorker.js
-   ==========================================================
-   ⚠️ تنبيه: تم إلغاء OneSignal من التطبيق بالكامل
-   
-   السبب: كان في تعارض بين OneSignal و Firebase FCM 
-   على نفس النطاق (Scope) مما أدى لفشل الإشعارات.
-   
-   النظام الحالي: يعتمد على Firebase Cloud Messaging (FCM)
-   فقط، ويتم تسجيله من خلال ملف wslnycash-sw.js.
-   
-   هذا الملف متروك فقط لتجنب أخطاء 404 في حال طلبه
-   من قبل المتصفح أو النظام القديم، ولا يقوم بأي وظيفة.
-   ========================================================== */
-
-// تخطي الانتظار عند التثبيت
-self.addEventListener('install', () => self.skipWaiting());
-
-// تفعيل الـ Worker مباشرة
-self.addEventListener('activate', () => self.clients.claim());
-
-// لا يوجد أي معالج آخر — الملف خالي من أي وظائف
-// لأن OneSignal تم إلغاؤه تماماً من التطبيق
+/* OneSignal Service Worker */
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
