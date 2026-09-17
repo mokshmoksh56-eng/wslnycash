@@ -829,12 +829,10 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 
 <!-- ============================================================
      🚀 OneSignal Initialization
-     ✅ تمت إضافة serviceWorkerPath و serviceWorkerParam
      ============================================================ -->
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
 
-  // ⚙️ App ID الخاص بمشروعك
   const ONESIGNAL_APP_ID = "7dd59624-d56e-47aa-b195-de1badc2cca2";
 
   OneSignalDeferred.push(async function(OneSignal) {
@@ -867,7 +865,6 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 
       console.log('✅ OneSignal initialized');
 
-      // 📩 معالج الضغط على الإشعار
       OneSignal.Notifications.addEventListener('click', (event) => {
         try {
           const data = event.notification.additionalData || {};
@@ -881,7 +878,6 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
         } catch (err) { console.warn('OneSignal click error:', err); }
       });
 
-      // 🔔 إذن الإشعارات
       OneSignal.Notifications.addEventListener('permissionChange', (granted) => {
         console.log('OneSignal permission:', granted);
       });
@@ -890,7 +886,6 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
     }
   });
 
-  // 🧩 دوال مساعدة للربط مع Firebase
   window.oneSignalLogin = function(externalId, tags) {
     try {
       OneSignalDeferred.push(async function(OneSignal) {
@@ -2192,25 +2187,33 @@ window.playMerchantCustomSound = function() {
     }
 
     function applySavedViewForRole(role) {
-        const view = getSavedViewForRole(role);
-
-        if (role === 'customer') {
-            if (view === 'customerReportsView' && window.fetchCustomerReports) {
-                window.fetchCustomerReports();
-            } else if (view === 'customerPendingView' && window.fetchCustomerPendingOrders) {
-                window.fetchCustomerPendingOrders();
+        try {
+            const view = getSavedViewForRole(role);
+            if (role === 'customer') {
+                if (view === 'customerReportsView' && window.fetchCustomerReports) {
+                    try { window.fetchCustomerReports(); } catch(err) { showView('customerView'); }
+                } else if (view === 'customerPendingView' && window.fetchCustomerPendingOrders) {
+                    try { window.fetchCustomerPendingOrders(); } catch(err) { showView('customerView'); }
+                } else {
+                    showView('customerView');
+                }
+            } else if (role === 'merchant') {
+                if (view === 'merchantReportsView' && window.loadMerchantReports) {
+                    setTimeout(() => {
+                        const currentView = localStorage.getItem('eqbad_active_view');
+                        if (currentView === 'merchantDashboardView') {
+                            try { window.loadMerchantReports(); } catch(err) { showView('merchantDashboardView'); }
+                        }
+                    }, 500);
+                } else {
+                    showView('merchantDashboardView');
+                }
             } else {
-                showView('customerView');
+                showView('roleView');
             }
-        } else if (role === 'merchant') {
-            if (view === 'merchantReportsView' && window.loadMerchantReports) {
-                setTimeout(() => {
-                    const currentView = localStorage.getItem('eqbad_active_view');
-                    if (currentView === 'merchantDashboardView') {
-                        window.loadMerchantReports();
-                    }
-                }, 500);
-            }
+        } catch (err) {
+            console.warn("applySavedViewForRole error:", err);
+            showView('roleView');
         }
     }
 
@@ -2265,7 +2268,11 @@ window.playMerchantCustomSound = function() {
                     localStorage.removeItem('eqbad_merchant_key');
                     showView('roleView');
                 }
-            } catch(e) { showView('roleView'); }
+            } catch(e) {
+                console.warn("خطأ في الاتصال بالإنترنت:", e);
+                alert("⚠️ تعذر الاتصال بالسيرفر. يرجى التحقق من جودة الإنترنت.");
+                applySavedViewForRole('merchant');
+            }
         }
         else if (savedCustomerPhone) {
             const custPhone = window.normalizePhone(savedCustomerPhone);
@@ -2307,7 +2314,11 @@ window.playMerchantCustomSound = function() {
                     localStorage.removeItem('eqbad_customer_session');
                     showView('roleView');
                 }
-            } catch(e) { showView('roleView'); }
+            } catch(e) {
+                console.warn("خطأ في الاتصال بالإنترنت:", e);
+                alert("⚠️ تعذر الاتصال بالسيرفر. يرجى التحقق من جودة الإنترنت.");
+                applySavedViewForRole('customer');
+            }
         }
         else {
             showView('roleView');
