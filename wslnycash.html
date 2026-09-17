@@ -829,6 +829,8 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 
 <!-- ============================================================
      🚀 OneSignal Initialization
+     ✅ تم حذف serviceWorkerPath و serviceWorkerParam
+     ✅ OneSignal يشتغل جوه الـ PWA Service Worker عن طريق importScripts
      ============================================================ -->
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -841,8 +843,6 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: 'OneSignalSDKWorker.js',
-        serviceWorkerParam: { scope: '/' },
         notifyButton: { enable: false },
         welcomeNotification: {
           title: "وصلني كاش",
@@ -2179,18 +2179,14 @@ window.playMerchantCustomSound = function() {
     // 🎯 استرجاع آخر صفحة كان فيها المستخدم قبل الريفريش
     // ============================================================
     function getSavedViewForRole(role) {
-        // أولاً: جرّب نقرأ من الـ URL hash
         let savedView = (location.hash || '').replace(/^#/, '').trim();
-        // لو مفيش، اقرأ من localStorage
         if (!savedView) savedView = localStorage.getItem('eqbad_active_view') || '';
 
         if (role === 'customer') {
-            // customerResultsView مستثناة لأنها محتاجة بيانات بحث مش محفوظة
             const allowed = ['customerView', 'customerReportsView', 'customerPendingView'];
             return allowed.includes(savedView) ? savedView : 'customerView';
         }
         if (role === 'merchant') {
-            // merchantSubscriptionView بتتحكم بحالة الاشتراك، منسترجعهاش
             const allowed = ['merchantDashboardView', 'merchantReportsView'];
             return allowed.includes(savedView) ? savedView : 'merchantDashboardView';
         }
@@ -2211,19 +2207,17 @@ window.playMerchantCustomSound = function() {
         } else if (role === 'merchant') {
             if (view === 'merchantReportsView' && window.loadMerchantReports) {
                 setTimeout(() => {
-                    // نتأكد إن الاشتراك لسه ساري (مش اتحول لصفحة الاشتراك)
                     const currentView = localStorage.getItem('eqbad_active_view');
                     if (currentView === 'merchantDashboardView') {
                         window.loadMerchantReports();
                     }
                 }, 500);
             }
-            // غير كده، الداشبورد هي الافتراضي أصلاً
         }
     }
 
     // ============================================================
-    // ✅ الدخول التلقائي - يعتمد على localStorage فقط (بدون Firebase Auth)
+    // ✅ الدخول التلقائي
     // ============================================================
     async function tryAutoLogin() {
         if (window._authReady) return;
@@ -2234,7 +2228,6 @@ window.playMerchantCustomSound = function() {
         const savedCustomerPhone = localStorage.getItem('eqbad_customer_phone');
         const savedCustomerName  = localStorage.getItem('eqbad_customer_name');
 
-        // 🏪 أولوية للتاجر
         if (savedMerchantPhone) {
             let mKey = savedMerchantKey || ('merchant_' + window.normalizePhone(savedMerchantPhone));
             try {
@@ -2260,7 +2253,6 @@ window.playMerchantCustomSound = function() {
                     await update(ref(db, 'eqbad_merchants/' + mKey), { current_session: mySession });
                     window.currentMerchantPhone = window.normalizePhone(savedMerchantPhone);
                     window.currentMerchantKey = mKey;
-                    // 🚀 OneSignal: ربط التاجر
                     if (window.oneSignalLogin) {
                         window.oneSignalLogin('merchant_' + window.currentMerchantPhone, {
                             role: 'merchant',
@@ -2272,7 +2264,6 @@ window.playMerchantCustomSound = function() {
                     window.renderMerchantDashboard(mData);
                     window.listenToOrders();
                     window.watchMerchantSession(mKey);
-                    // 🎯 استرجاع آخر صفحة (لو كان على سجل العمليات مثلاً)
                     applySavedViewForRole('merchant');
                 } else {
                     localStorage.removeItem('eqbad_merchant_phone');
@@ -2281,7 +2272,6 @@ window.playMerchantCustomSound = function() {
                 }
             } catch(e) { showView('roleView'); }
         }
-        // 🏃‍♂️ أو العميل
         else if (savedCustomerPhone) {
             const custPhone = window.normalizePhone(savedCustomerPhone);
             try {
@@ -2303,7 +2293,6 @@ window.playMerchantCustomSound = function() {
                     await update(ref(db, 'eqbad_customers/customer_' + custPhone), { current_session: mySession });
                     window.currentCustomerPhone = custPhone;
                     window.currentCustomerName = savedCustomerName || cData.name || "عميل مسجل";
-                    // 🚀 OneSignal: ربط العميل
                     if (window.oneSignalLogin) {
                         window.oneSignalLogin('customer_' + custPhone, {
                             role: 'customer',
@@ -2316,7 +2305,6 @@ window.playMerchantCustomSound = function() {
                     document.getElementById('custProfilePhone').innerText = custPhone;
                     window.watchCustomerSession(custPhone);
                     window.listenToCustomerActiveOrders();
-                    // 🎯 استرجاع آخر صفحة (السجل / المعلقة / الرئيسية)
                     applySavedViewForRole('customer');
                 } else {
                     localStorage.removeItem('eqbad_customer_phone');
@@ -2326,13 +2314,11 @@ window.playMerchantCustomSound = function() {
                 }
             } catch(e) { showView('roleView'); }
         }
-        // 👤 لا يوجد حساب محفوظ
         else {
             showView('roleView');
         }
     }
 
-    // 🚀 شغّل الدخول التلقائي فور جاهزية الصفحة
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', tryAutoLogin);
     } else {
@@ -2371,7 +2357,6 @@ window.playMerchantCustomSound = function() {
             window.currentCustomerName = name;
             localStorage.setItem('eqbad_customer_phone', phone);
             localStorage.setItem('eqbad_customer_name', name);
-            // 🚀 OneSignal: ربط العميل الجديد
             if (window.oneSignalLogin) {
                 window.oneSignalLogin('customer_' + phone, { role: 'customer', name: name, phone: phone });
             }
@@ -2407,7 +2392,6 @@ window.playMerchantCustomSound = function() {
                 window.currentCustomerName = snap.val().name;
                 localStorage.setItem('eqbad_customer_phone', phone);
                 localStorage.setItem('eqbad_customer_name', window.currentCustomerName);
-                // 🚀 OneSignal: ربط العميل
                 if (window.oneSignalLogin) {
                     window.oneSignalLogin('customer_' + phone, {
                         role: 'customer',
@@ -2438,7 +2422,6 @@ window.playMerchantCustomSound = function() {
         localStorage.removeItem('eqbad_customer_session');
         window.currentCustomerPhone = "";
         window.currentCustomerName = "";
-        // 🚀 OneSignal: فصل المستخدم
         if (window.oneSignalLogout) window.oneSignalLogout();
         showView('roleView');
     };
@@ -2489,7 +2472,6 @@ window.playMerchantCustomSound = function() {
             window.currentMerchantKey = mKey;
             localStorage.setItem('eqbad_merchant_phone', phone);
             localStorage.setItem('eqbad_merchant_key', mKey);
-            // 🚀 OneSignal: ربط التاجر الجديد
             if (window.oneSignalLogin) {
                 window.oneSignalLogin('merchant_' + phone, {
                     role: 'merchant',
@@ -2529,7 +2511,6 @@ window.playMerchantCustomSound = function() {
                 window.currentMerchantKey = actualKey;
                 localStorage.setItem('eqbad_merchant_phone', phone);
                 localStorage.setItem('eqbad_merchant_key', actualKey);
-                // 🚀 OneSignal: ربط التاجر
                 if (window.oneSignalLogin) {
                     window.oneSignalLogin('merchant_' + phone, {
                         role: 'merchant',
@@ -2563,7 +2544,6 @@ window.playMerchantCustomSound = function() {
         window.notifiedOrders.clear();
         window.clearAllPendingToasts();
         if (window.clearPaymentImage) window.clearPaymentImage();
-        // 🚀 OneSignal: فصل المستخدم
         if (window.oneSignalLogout) window.oneSignalLogout();
         showView('roleView');
     };
