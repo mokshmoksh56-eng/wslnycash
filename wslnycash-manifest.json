@@ -2,9 +2,9 @@
   "name": "وصلني كاش",
   "short_name": "وصلني كاش",
   "description": "منصة وسيطة آمنة لتوفير السيولة النقدية",
-  "id": "/wslnycash/",
-  "start_url": "/wslnycash/wslnycash.html",
-  "scope": "/wslnycash/",
+  "id": "/wslnycash.html",
+  "start_url": "/wslnycash.html",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0A1F3C",
@@ -13,47 +13,12 @@
   "dir": "rtl",
   "categories": ["finance", "business"],
   "icons": [
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "256x256",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wslnycash/icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icon.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
