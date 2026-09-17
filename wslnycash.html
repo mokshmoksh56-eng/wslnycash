@@ -842,7 +842,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
         serviceWorkerPath: 'OneSignalSDKWorker.js',
-        serviceWorkerParam: { scope: '/wslnycash/' },
+        serviceWorkerParam: { scope: '/' },
         notifyButton: { enable: false },
         welcomeNotification: {
           title: "وصلني كاش",
@@ -2109,7 +2109,7 @@ window.playMerchantCustomSound = function() {
             let registration = null;
             if ('serviceWorker' in navigator) {
                 try {
-                    registration = await navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/wslnycash/' });
+                    registration = await navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/' });
                 } catch (swErr) { console.error('SW error:', swErr); }
             }
             const tokenOptions = { vapidKey: 'BHlaSnheargWsxUa5b18VBog6KSq778kZ398P5drxS0tUwsUdUy8I0ADAzRO6CS3BJKNmZTfjBzG_Fv6gIBOuwI' };
