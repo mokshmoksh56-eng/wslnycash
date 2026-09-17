@@ -1502,10 +1502,42 @@ window.installPWA = function() {
     deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; });
 };
 
+// ============================================================
+// ✅ Service Worker مع Auto Update
+// ============================================================
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./wslnycash-sw.js')
-        .then(reg => console.log('✅ SW مسجل:', reg.scope))
+    navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/' })
+        .then(reg => {
+            console.log('✅ SW مسجل:', reg.scope);
+
+            // ✅ مراقبة التحديثات الجديدة
+            reg.addEventListener('updatefound', () => {
+                const newSW = reg.installing;
+                if (!newSW) return;
+                newSW.addEventListener('statechange', () => {
+                    if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                        // فيه نسخة جديدة — نبلغ المستخدم
+                        if (confirm('🔄 فيه تحديث جديد للتطبيق. عايز تحدّث الآن؟')) {
+                            newSW.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+
+            // ✅ فحص التحديثات كل ساعة تلقائيًا
+            setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+        })
         .catch(err => console.warn('⚠️ SW registration failed:', err));
+
+    // ✅ إعادة تحميل الصفحة تلقائيًا عند تفعيل SW جديد
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+        }
+    });
 }
 
 let currentRatingValue = 0;
@@ -2223,8 +2255,10 @@ window.playMerchantCustomSound = function() {
 
         const savedMerchantPhone = localStorage.getItem('eqbad_merchant_phone');
         const savedMerchantKey   = localStorage.getItem('eqbad_merchant_key');
+        const savedMerchantSession = localStorage.getItem('eqbad_merchant_session');
         const savedCustomerPhone = localStorage.getItem('eqbad_customer_phone');
         const savedCustomerName  = localStorage.getItem('eqbad_customer_name');
+        const savedCustomerSession = localStorage.getItem('eqbad_customer_session');
 
         if (savedMerchantPhone) {
             let mKey = savedMerchantKey || ('merchant_' + window.normalizePhone(savedMerchantPhone));
@@ -2237,8 +2271,8 @@ window.playMerchantCustomSound = function() {
                 if (snap.exists()) {
                     const mData = snap.val();
                     const serverSession = mData.current_session;
-                    const localSession = localStorage.getItem('eqbad_merchant_session');
-                    if (serverSession && localSession && serverSession !== localSession) {
+
+                    if (serverSession && savedMerchantSession && serverSession !== savedMerchantSession) {
                         localStorage.removeItem('eqbad_merchant_phone');
                         localStorage.removeItem('eqbad_merchant_key');
                         localStorage.removeItem('eqbad_merchant_session');
@@ -2246,9 +2280,13 @@ window.playMerchantCustomSound = function() {
                         showView('roleView');
                         return;
                     }
-                    const mySession = window.generateSessionId();
-                    localStorage.setItem('eqbad_merchant_session', mySession);
-                    await update(ref(db, 'eqbad_merchants/' + mKey), { current_session: mySession });
+
+                    if (!savedMerchantSession) {
+                        const mySession = window.generateSessionId();
+                        localStorage.setItem('eqbad_merchant_session', mySession);
+                        await update(ref(db, 'eqbad_merchants/' + mKey), { current_session: mySession });
+                    }
+
                     window.currentMerchantPhone = window.normalizePhone(savedMerchantPhone);
                     window.currentMerchantKey = mKey;
                     if (window.oneSignalLogin) {
@@ -2266,6 +2304,7 @@ window.playMerchantCustomSound = function() {
                 } else {
                     localStorage.removeItem('eqbad_merchant_phone');
                     localStorage.removeItem('eqbad_merchant_key');
+                    localStorage.removeItem('eqbad_merchant_session');
                     showView('roleView');
                 }
             } catch(e) {
@@ -2281,8 +2320,8 @@ window.playMerchantCustomSound = function() {
                 if (custSnap.exists()) {
                     const cData = custSnap.val();
                     const serverSession = cData.current_session;
-                    const localSession = localStorage.getItem('eqbad_customer_session');
-                    if (serverSession && localSession && serverSession !== localSession) {
+
+                    if (serverSession && savedCustomerSession && serverSession !== savedCustomerSession) {
                         localStorage.removeItem('eqbad_customer_phone');
                         localStorage.removeItem('eqbad_customer_name');
                         localStorage.removeItem('eqbad_customer_session');
@@ -2290,9 +2329,13 @@ window.playMerchantCustomSound = function() {
                         showView('roleView');
                         return;
                     }
-                    const mySession = window.generateSessionId();
-                    localStorage.setItem('eqbad_customer_session', mySession);
-                    await update(ref(db, 'eqbad_customers/customer_' + custPhone), { current_session: mySession });
+
+                    if (!savedCustomerSession) {
+                        const mySession = window.generateSessionId();
+                        localStorage.setItem('eqbad_customer_session', mySession);
+                        await update(ref(db, 'eqbad_customers/customer_' + custPhone), { current_session: mySession });
+                    }
+
                     window.currentCustomerPhone = custPhone;
                     window.currentCustomerName = savedCustomerName || cData.name || "عميل مسجل";
                     if (window.oneSignalLogin) {
