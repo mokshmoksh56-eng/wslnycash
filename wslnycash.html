@@ -1645,7 +1645,7 @@ window.playMerchantCustomSound = function() {
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, push, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
@@ -2175,15 +2175,19 @@ window.playMerchantCustomSound = function() {
         }
     };
 
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) return;
+    // ============================================================
+    // ✅ الدخول التلقائي - يعتمد على localStorage فقط (بدون Firebase Auth)
+    // ============================================================
+    async function tryAutoLogin() {
         if (window._authReady) return;
         window._authReady = true;
+
         const savedMerchantPhone = localStorage.getItem('eqbad_merchant_phone');
         const savedMerchantKey   = localStorage.getItem('eqbad_merchant_key');
         const savedCustomerPhone = localStorage.getItem('eqbad_customer_phone');
         const savedCustomerName  = localStorage.getItem('eqbad_customer_name');
 
+        // 🏪 أولوية للتاجر
         if (savedMerchantPhone) {
             let mKey = savedMerchantKey || ('merchant_' + window.normalizePhone(savedMerchantPhone));
             try {
@@ -2227,48 +2231,63 @@ window.playMerchantCustomSound = function() {
                     showView('roleView');
                 }
             } catch(e) { showView('roleView'); }
-        } else if (savedCustomerPhone) {
+        }
+        // 🏃‍♂️ أو العميل
+        else if (savedCustomerPhone) {
             const custPhone = window.normalizePhone(savedCustomerPhone);
-            let custSnap = await get(ref(db, 'eqbad_customers/customer_' + custPhone));
-            if (custSnap.exists()) {
-                const cData = custSnap.val();
-                const serverSession = cData.current_session;
-                const localSession = localStorage.getItem('eqbad_customer_session');
-                if (serverSession && localSession && serverSession !== localSession) {
+            try {
+                let custSnap = await get(ref(db, 'eqbad_customers/customer_' + custPhone));
+                if (custSnap.exists()) {
+                    const cData = custSnap.val();
+                    const serverSession = cData.current_session;
+                    const localSession = localStorage.getItem('eqbad_customer_session');
+                    if (serverSession && localSession && serverSession !== localSession) {
+                        localStorage.removeItem('eqbad_customer_phone');
+                        localStorage.removeItem('eqbad_customer_name');
+                        localStorage.removeItem('eqbad_customer_session');
+                        alert("⚠️ هذا الحساب مفتوح على جهاز آخر حالياً.");
+                        showView('roleView');
+                        return;
+                    }
+                    const mySession = window.generateSessionId();
+                    localStorage.setItem('eqbad_customer_session', mySession);
+                    await update(ref(db, 'eqbad_customers/customer_' + custPhone), { current_session: mySession });
+                    window.currentCustomerPhone = custPhone;
+                    window.currentCustomerName = savedCustomerName || cData.name || "عميل مسجل";
+                    // 🚀 OneSignal: ربط العميل
+                    if (window.oneSignalLogin) {
+                        window.oneSignalLogin('customer_' + custPhone, {
+                            role: 'customer',
+                            name: window.currentCustomerName,
+                            phone: custPhone
+                        });
+                    }
+                    window.requestPushPermissions('customer', custPhone);
+                    document.getElementById('custProfileName').innerText = window.currentCustomerName;
+                    document.getElementById('custProfilePhone').innerText = custPhone;
+                    showView('customerView');
+                    window.watchCustomerSession(custPhone);
+                    window.listenToCustomerActiveOrders();
+                } else {
                     localStorage.removeItem('eqbad_customer_phone');
                     localStorage.removeItem('eqbad_customer_name');
                     localStorage.removeItem('eqbad_customer_session');
-                    alert("⚠️ هذا الحساب مفتوح على جهاز آخر حالياً.");
                     showView('roleView');
-                    return;
                 }
-                const mySession = window.generateSessionId();
-                localStorage.setItem('eqbad_customer_session', mySession);
-                await update(ref(db, 'eqbad_customers/customer_' + custPhone), { current_session: mySession });
-                window.currentCustomerPhone = custPhone;
-                window.currentCustomerName = savedCustomerName || cData.name || "عميل مسجل";
-                // 🚀 OneSignal: ربط العميل
-                if (window.oneSignalLogin) {
-                    window.oneSignalLogin('customer_' + custPhone, {
-                        role: 'customer',
-                        name: window.currentCustomerName,
-                        phone: custPhone
-                    });
-                }
-                window.requestPushPermissions('customer', custPhone);
-                document.getElementById('custProfileName').innerText = window.currentCustomerName;
-                document.getElementById('custProfilePhone').innerText = custPhone;
-                showView('customerView');
-                window.watchCustomerSession(custPhone);
-                window.listenToCustomerActiveOrders();
-            } else {
-                localStorage.removeItem('eqbad_customer_phone');
-                localStorage.removeItem('eqbad_customer_name');
-                localStorage.removeItem('eqbad_customer_session');
-                showView('roleView');
-            }
-        } else { showView('roleView'); }
-    });
+            } catch(e) { showView('roleView'); }
+        }
+        // 👤 لا يوجد حساب محفوظ
+        else {
+            showView('roleView');
+        }
+    }
+
+    // 🚀 شغّل الدخول التلقائي فور جاهزية الصفحة
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryAutoLogin);
+    } else {
+        tryAutoLogin();
+    }
 
     window.registerCustomer = async function(e) {
         e.preventDefault();
