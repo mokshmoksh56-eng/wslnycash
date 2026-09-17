@@ -829,8 +829,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 
 <!-- ============================================================
      🚀 OneSignal Initialization
-     ✅ تم حذف serviceWorkerPath و serviceWorkerParam
-     ✅ OneSignal يشتغل جوه الـ PWA Service Worker عن طريق importScripts
+     ✅ تمت إضافة serviceWorkerPath و serviceWorkerParam
      ============================================================ -->
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -843,6 +842,8 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
+        serviceWorkerPath: 'wslnycash-sw.js',
+        serviceWorkerParam: { scope: '/' },
         notifyButton: { enable: false },
         welcomeNotification: {
           title: "وصلني كاش",
@@ -2175,9 +2176,6 @@ window.playMerchantCustomSound = function() {
         }
     };
 
-    // ============================================================
-    // 🎯 استرجاع آخر صفحة كان فيها المستخدم قبل الريفريش
-    // ============================================================
     function getSavedViewForRole(role) {
         let savedView = (location.hash || '').replace(/^#/, '').trim();
         if (!savedView) savedView = localStorage.getItem('eqbad_active_view') || '';
@@ -2216,9 +2214,6 @@ window.playMerchantCustomSound = function() {
         }
     }
 
-    // ============================================================
-    // ✅ الدخول التلقائي
-    // ============================================================
     async function tryAutoLogin() {
         if (window._authReady) return;
         window._authReady = true;
