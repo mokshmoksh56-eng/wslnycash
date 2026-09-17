@@ -2176,6 +2176,53 @@ window.playMerchantCustomSound = function() {
     };
 
     // ============================================================
+    // 🎯 استرجاع آخر صفحة كان فيها المستخدم قبل الريفريش
+    // ============================================================
+    function getSavedViewForRole(role) {
+        // أولاً: جرّب نقرأ من الـ URL hash
+        let savedView = (location.hash || '').replace(/^#/, '').trim();
+        // لو مفيش، اقرأ من localStorage
+        if (!savedView) savedView = localStorage.getItem('eqbad_active_view') || '';
+
+        if (role === 'customer') {
+            // customerResultsView مستثناة لأنها محتاجة بيانات بحث مش محفوظة
+            const allowed = ['customerView', 'customerReportsView', 'customerPendingView'];
+            return allowed.includes(savedView) ? savedView : 'customerView';
+        }
+        if (role === 'merchant') {
+            // merchantSubscriptionView بتتحكم بحالة الاشتراك، منسترجعهاش
+            const allowed = ['merchantDashboardView', 'merchantReportsView'];
+            return allowed.includes(savedView) ? savedView : 'merchantDashboardView';
+        }
+        return 'roleView';
+    }
+
+    function applySavedViewForRole(role) {
+        const view = getSavedViewForRole(role);
+
+        if (role === 'customer') {
+            if (view === 'customerReportsView' && window.fetchCustomerReports) {
+                window.fetchCustomerReports();
+            } else if (view === 'customerPendingView' && window.fetchCustomerPendingOrders) {
+                window.fetchCustomerPendingOrders();
+            } else {
+                showView('customerView');
+            }
+        } else if (role === 'merchant') {
+            if (view === 'merchantReportsView' && window.loadMerchantReports) {
+                setTimeout(() => {
+                    // نتأكد إن الاشتراك لسه ساري (مش اتحول لصفحة الاشتراك)
+                    const currentView = localStorage.getItem('eqbad_active_view');
+                    if (currentView === 'merchantDashboardView') {
+                        window.loadMerchantReports();
+                    }
+                }, 500);
+            }
+            // غير كده، الداشبورد هي الافتراضي أصلاً
+        }
+    }
+
+    // ============================================================
     // ✅ الدخول التلقائي - يعتمد على localStorage فقط (بدون Firebase Auth)
     // ============================================================
     async function tryAutoLogin() {
@@ -2225,6 +2272,8 @@ window.playMerchantCustomSound = function() {
                     window.renderMerchantDashboard(mData);
                     window.listenToOrders();
                     window.watchMerchantSession(mKey);
+                    // 🎯 استرجاع آخر صفحة (لو كان على سجل العمليات مثلاً)
+                    applySavedViewForRole('merchant');
                 } else {
                     localStorage.removeItem('eqbad_merchant_phone');
                     localStorage.removeItem('eqbad_merchant_key');
@@ -2265,9 +2314,10 @@ window.playMerchantCustomSound = function() {
                     window.requestPushPermissions('customer', custPhone);
                     document.getElementById('custProfileName').innerText = window.currentCustomerName;
                     document.getElementById('custProfilePhone').innerText = custPhone;
-                    showView('customerView');
                     window.watchCustomerSession(custPhone);
                     window.listenToCustomerActiveOrders();
+                    // 🎯 استرجاع آخر صفحة (السجل / المعلقة / الرئيسية)
+                    applySavedViewForRole('customer');
                 } else {
                     localStorage.removeItem('eqbad_customer_phone');
                     localStorage.removeItem('eqbad_customer_name');
