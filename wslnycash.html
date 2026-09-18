@@ -248,7 +248,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 @keyframes dotPulse{ 0%, 100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(220,38,38,.7); } 50%{ transform:scale(1.15); box-shadow:0 0 0 8px rgba(220,38,38,0); } }
 .star-rating{ display:inline-flex; gap:3px; direction:ltr; }
 .star-rating .star{ font-size:32px; cursor:pointer; color:#CBD5E1; transition:all .18s ease; user-select:none; }
-.star-rating .star.active{ color:#F59E0B; text-shadow:0 0 8px rgba(245,158,11,.6); }
+.star-rating .star.active{ color:#F59E0B; text-shadow:0 0 0 8px rgba(245,158,11,.6); }
 .star-rating .star:hover{ transform:scale(1.15); }
 .rating-display{ display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:900; }
 .rating-display .stars-mini{ color:#F59E0B; letter-spacing:-1px; font-size:14px; }
@@ -1503,40 +1503,76 @@ window.installPWA = function() {
 };
 
 // ============================================================
-// ✅ Service Worker مع Auto Update
+// ✅ Service Worker مع Auto Update (بدون تكرار رسالة التحديث)
 // ============================================================
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/' })
-        .then(reg => {
-            console.log('✅ SW مسجل:', reg.scope);
+    // ✅ مفاتيح التخزين لمنع ظهور رسالة التحديث أكثر من مرة
+    const SW_PROMPT_KEY = 'eqbad_sw_prompted_url';
+    const SW_REFRESH_KEY = 'eqbad_sw_refreshing';
 
-            // ✅ مراقبة التحديثات الجديدة
-            reg.addEventListener('updatefound', () => {
-                const newSW = reg.installing;
-                if (!newSW) return;
-                newSW.addEventListener('statechange', () => {
-                    if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                        // فيه نسخة جديدة — نبلغ المستخدم
-                        if (confirm('🔄 فيه تحديث جديد للتطبيق. عايز تحدّث الآن؟')) {
-                            newSW.postMessage({ type: 'SKIP_WAITING' });
-                            window.location.reload();
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/' })
+            .then(reg => {
+                console.log('✅ SW مسجل:', reg.scope);
+
+                // ✅ فحص أولي بعد 5 ثواني (مش فوري عشان ما يزعجش المستخدم)
+                setTimeout(() => {
+                    reg.update().catch(() => {});
+                }, 5000);
+
+                // ✅ مراقبة التحديثات الجديدة
+                reg.addEventListener('updatefound', () => {
+                    const newSW = reg.installing;
+                    if (!newSW) return;
+
+                    newSW.addEventListener('statechange', () => {
+                        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                            // 🔑 نتأكد إن الرسالة ما ظهرتش قبل كده لنفس النسخة
+                            const lastPrompted = localStorage.getItem(SW_PROMPT_KEY);
+                            const currentSWUrl = newSW.scriptURL || 'wslnycash-sw';
+
+                            if (lastPrompted === currentSWUrl) {
+                                console.log('⏭️ تم عرض رسالة التحديث من قبل لهذه النسخة');
+                                return;
+                            }
+
+                            // 🔑 نسجّل إن الرسالة ظهرت
+                            try {
+                                localStorage.setItem(SW_PROMPT_KEY, currentSWUrl);
+                            } catch(e) {}
+
+                            if (confirm('🔄 فيه تحديث جديد للتطبيق. عايز تحدّث الآن؟')) {
+                                try {
+                                    localStorage.setItem(SW_REFRESH_KEY, 'true');
+                                } catch(e) {}
+                                newSW.postMessage({ type: 'SKIP_WAITING' });
+                            } else {
+                                console.log('👤 المستخدم رفض التحديث');
+                            }
                         }
-                    }
+                    });
                 });
-            });
 
-            // ✅ فحص التحديثات كل ساعة تلقائيًا
-            setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
-        })
-        .catch(err => console.warn('⚠️ SW registration failed:', err));
+                // ✅ فحص التحديثات كل 3 ساعات (بدل ساعة)
+                setInterval(() => {
+                    reg.update().catch(() => {});
+                }, 3 * 60 * 60 * 1000);
+            })
+            .catch(err => console.warn('⚠️ SW registration failed:', err));
 
-    // ✅ إعادة تحميل الصفحة تلقائيًا عند تفعيل SW جديد
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
+        // ✅ إعادة تحميل واحدة فقط بعد التحديث
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            if (localStorage.getItem(SW_REFRESH_KEY) !== 'true') return;
+
             refreshing = true;
+            try {
+                localStorage.removeItem(SW_REFRESH_KEY);
+            } catch(e) {}
+            console.log('🔄 إعادة تحميل بعد تفعيل SW جديد...');
             window.location.reload();
-        }
+        });
     });
 }
 
