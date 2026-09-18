@@ -828,7 +828,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 </div>
 
 <!-- ============================================================
-     🚀 OneSignal Initialization
+     🚀 OneSignal Initialization (v16) — مع الإصلاحات
      ============================================================ -->
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -840,8 +840,11 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: 'wslnycash-sw.js',
+
+        // ✅✅✅ المسار الصحيح لملف OneSignal
+        serviceWorkerPath: '/OneSignalSDKWorker.js',
         serviceWorkerParam: { scope: '/' },
+
         notifyButton: { enable: false },
         welcomeNotification: {
           title: "وصلني كاش",
@@ -865,6 +868,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
 
       console.log('✅ OneSignal initialized');
 
+      // لما المستخدم يدوس على إشعار
       OneSignal.Notifications.addEventListener('click', (event) => {
         try {
           const data = event.notification.additionalData || {};
@@ -886,6 +890,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
     }
   });
 
+  // ربط المستخدم بـ external_id
   window.oneSignalLogin = function(externalId, tags) {
     try {
       OneSignalDeferred.push(async function(OneSignal) {
@@ -900,6 +905,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
     } catch (e) { console.warn('oneSignalLogin outer error:', e); }
   };
 
+  // تسجيل الخروج
   window.oneSignalLogout = function() {
     try {
       OneSignalDeferred.push(async function(OneSignal) {
@@ -1017,7 +1023,7 @@ input[type="number"], input[type="tel"], input[type="password"], input[type="tex
         if (amountInput) amountInput.className = "input-base amount-input en-num " + (method === 'vodafone' ? 'amount-vf' : 'amount-ip');
         if (lblVf) lblVf.className = "method-card " + (method === 'vodafone' ? "method-card-vf" : "method-card-idle");
         if (lblIp) lblIp.className = "method-card " + (method === 'instapay' ? "method-card-ip" : "method-card-idle");
-        window.updateCustomerTxUI(); 
+        window.updateCustomerTxUI();
     };
 
     window.normalizePhone = function(p) {
@@ -1503,73 +1509,48 @@ window.installPWA = function() {
 };
 
 // ============================================================
-// ✅ Service Worker مع Auto Update (بدون تكرار رسالة التحديث)
+// ✅ Service Worker للكاش فقط (OneSignal يدير push في ملفه الخاص)
 // ============================================================
 if ('serviceWorker' in navigator) {
-    // ✅ مفاتيح التخزين لمنع ظهور رسالة التحديث أكثر من مرة
     const SW_PROMPT_KEY = 'eqbad_sw_prompted_url';
     const SW_REFRESH_KEY = 'eqbad_sw_refreshing';
 
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/' })
             .then(reg => {
-                console.log('✅ SW مسجل:', reg.scope);
+                console.log('✅ PWA Cache SW مسجل:', reg.scope);
 
-                // ✅ فحص أولي بعد 5 ثواني (مش فوري عشان ما يزعجش المستخدم)
                 setTimeout(() => {
                     reg.update().catch(() => {});
                 }, 5000);
 
-                // ✅ مراقبة التحديثات الجديدة
                 reg.addEventListener('updatefound', () => {
                     const newSW = reg.installing;
                     if (!newSW) return;
-
                     newSW.addEventListener('statechange', () => {
                         if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                            // 🔑 نتأكد إن الرسالة ما ظهرتش قبل كده لنفس النسخة
                             const lastPrompted = localStorage.getItem(SW_PROMPT_KEY);
                             const currentSWUrl = newSW.scriptURL || 'wslnycash-sw';
-
-                            if (lastPrompted === currentSWUrl) {
-                                console.log('⏭️ تم عرض رسالة التحديث من قبل لهذه النسخة');
-                                return;
-                            }
-
-                            // 🔑 نسجّل إن الرسالة ظهرت
-                            try {
-                                localStorage.setItem(SW_PROMPT_KEY, currentSWUrl);
-                            } catch(e) {}
-
+                            if (lastPrompted === currentSWUrl) return;
+                            try { localStorage.setItem(SW_PROMPT_KEY, currentSWUrl); } catch(e) {}
                             if (confirm('🔄 فيه تحديث جديد للتطبيق. عايز تحدّث الآن؟')) {
-                                try {
-                                    localStorage.setItem(SW_REFRESH_KEY, 'true');
-                                } catch(e) {}
+                                try { localStorage.setItem(SW_REFRESH_KEY, 'true'); } catch(e) {}
                                 newSW.postMessage({ type: 'SKIP_WAITING' });
-                            } else {
-                                console.log('👤 المستخدم رفض التحديث');
                             }
                         }
                     });
                 });
 
-                // ✅ فحص التحديثات كل 3 ساعات (بدل ساعة)
-                setInterval(() => {
-                    reg.update().catch(() => {});
-                }, 3 * 60 * 60 * 1000);
+                setInterval(() => { reg.update().catch(() => {}); }, 3 * 60 * 60 * 1000);
             })
             .catch(err => console.warn('⚠️ SW registration failed:', err));
 
-        // ✅ إعادة تحميل واحدة فقط بعد التحديث
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (refreshing) return;
             if (localStorage.getItem(SW_REFRESH_KEY) !== 'true') return;
-
             refreshing = true;
-            try {
-                localStorage.removeItem(SW_REFRESH_KEY);
-            } catch(e) {}
+            try { localStorage.removeItem(SW_REFRESH_KEY); } catch(e) {}
             console.log('🔄 إعادة تحميل بعد تفعيل SW جديد...');
             window.location.reload();
         });
@@ -1711,7 +1692,6 @@ window.playMerchantCustomSound = function() {
     import { getDatabase, ref, set, onValue, update, push, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDmPciW_QPM4vwcMLX2M44_C0a8jqHdPjU",
@@ -1728,7 +1708,6 @@ window.playMerchantCustomSound = function() {
     const db = getDatabase(app);
     const auth = getAuth(app);
     const analytics = getAnalytics(app);
-    const messaging = getMessaging(app);
 
     window.dbRef = db;
     window._orderUnsub = null;
@@ -1738,6 +1717,18 @@ window.playMerchantCustomSound = function() {
     window._authReady = false;
 
     window.generateSessionId = function() { return 'sess_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 15); };
+
+    // ============================================================
+    // ⛔ Firebase Messaging معطّل — OneSignal يدير الإشعارات
+    // ============================================================
+    window.requestPushPermissions = async function(userType, phone) {
+        // ✅ OneSignal بيدير الإشعارات بالكامل
+        // مش محتاجين FCM token من Firebase
+        console.log('ℹ️ OneSignal يدير الإشعارات — Firebase Messaging معطّل');
+        return;
+    };
+
+    // ✅ OneSignal يقرأ external_id ويربط المستخدم تلقائيًا (من oneSignalLogin)
 
     window.watchMerchantSession = function(mKey) {
         if (window._merchantSessionUnsub) { try { window._merchantSessionUnsub(); } catch(e){} window._merchantSessionUnsub = null; }
@@ -2159,52 +2150,6 @@ window.playMerchantCustomSound = function() {
         .catch(err => console.error('خطأ حفظ موقع العميل:', err));
     };
 
-    window.requestPushPermissions = async function(userType, phone) {
-        try {
-            if (!('Notification' in window)) return;
-            if (Notification.permission === 'denied') {
-                console.log('⚠️ المستخدم رفض الإشعارات مسبقاً. يتم التخطي.');
-                return;
-            }
-            if (Notification.permission !== 'granted') {
-                const perm = await Notification.requestPermission();
-                if (perm !== 'granted') return;
-            }
-            let registration = null;
-            if ('serviceWorker' in navigator) {
-                try {
-                    registration = await navigator.serviceWorker.register('./wslnycash-sw.js', { scope: '/' });
-                } catch (swErr) { console.error('SW error:', swErr); }
-            }
-            const tokenOptions = { vapidKey: 'BHlaSnheargWsxUa5b18VBog6KSq778kZ398P5drxS0tUwsUdUy8I0ADAzRO6CS3BJKNmZTfjBzG_Fv6gIBOuwI' };
-            if (registration) tokenOptions.serviceWorkerRegistration = registration;
-            const currentToken = await getToken(messaging, tokenOptions);
-            if (currentToken) {
-                const path = userType === 'merchant'
-                    ? `eqbad_merchants/${window.currentMerchantKey || 'merchant_' + phone}`
-                    : `eqbad_customers/customer_${phone}`;
-                await update(ref(db, path), {
-                    fcmToken: currentToken,
-                    fcmTokenUpdatedAt: Date.now(),
-                    fcmPlatform: /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' :
-                                 /Android/.test(navigator.userAgent) ? 'android' : 'web'
-                });
-            }
-        } catch (error) { console.error('Push setup error:', error); }
-    };
-
-    onMessage(messaging, (payload) => {
-        window.playLoudNotification();
-        if ('Notification' in window && Notification.permission === "granted") {
-            new Notification(payload.notification.title || "إشعار جديد", {
-                body: payload.notification.body,
-                icon: 'icon.png',
-                dir: 'rtl',
-                silent: true
-            });
-        }
-    });
-
     window.updateMerchantLocationToDB = function(lat, lng) {
         let mKey = window.currentMerchantKey || ('merchant_' + window.currentMerchantPhone);
         if(!mKey) return;
@@ -2332,7 +2277,6 @@ window.playMerchantCustomSound = function() {
                             phone: window.currentMerchantPhone
                         });
                     }
-                    window.requestPushPermissions('merchant', window.currentMerchantPhone);
                     window.renderMerchantDashboard(mData);
                     window.listenToOrders();
                     window.watchMerchantSession(mKey);
@@ -2381,7 +2325,6 @@ window.playMerchantCustomSound = function() {
                             phone: custPhone
                         });
                     }
-                    window.requestPushPermissions('customer', custPhone);
                     document.getElementById('custProfileName').innerText = window.currentCustomerName;
                     document.getElementById('custProfilePhone').innerText = custPhone;
                     window.watchCustomerSession(custPhone);
@@ -2445,7 +2388,6 @@ window.playMerchantCustomSound = function() {
             if (window.oneSignalLogin) {
                 window.oneSignalLogin('customer_' + phone, { role: 'customer', name: name, phone: phone });
             }
-            window.requestPushPermissions('customer', phone);
             document.getElementById('custProfileName').innerText = name;
             document.getElementById('custProfilePhone').innerText = phone;
             btn.innerHTML = "إنشاء الحساب ✔️"; btn.disabled = false;
@@ -2484,7 +2426,6 @@ window.playMerchantCustomSound = function() {
                         phone: phone
                     });
                 }
-                window.requestPushPermissions('customer', phone);
                 document.getElementById('custProfileName').innerText = window.currentCustomerName;
                 document.getElementById('custProfilePhone').innerText = window.currentCustomerPhone;
                 showView('customerView');
@@ -2564,7 +2505,6 @@ window.playMerchantCustomSound = function() {
                     phone: phone
                 });
             }
-            window.requestPushPermissions('merchant', phone);
             btn.innerHTML = "تأكيد وتفعيل الحساب ✔️"; btn.disabled = false;
             window.renderMerchantDashboard(merchantData);
             window.listenToOrders();
@@ -2603,7 +2543,6 @@ window.playMerchantCustomSound = function() {
                         phone: phone
                     });
                 }
-                window.requestPushPermissions('merchant', phone);
                 window.renderMerchantDashboard(snap.val());
                 window.listenToOrders();
                 window.watchMerchantSession(actualKey);
