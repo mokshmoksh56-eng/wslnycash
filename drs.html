@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>لوحة المعلم - منصة احجزلى</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+:root{
+  --primary-950:#0A1E3F; --primary-900:#0F2D5C; --primary-800:#1E3A8A;
+  --primary-700:#1D4ED8; --primary-600:#2563EB; --primary-500:#3B82F6;
+  --primary-400:#60A5FA; --primary-300:#93C5FD; --primary-200:#BFDBFE;
+  --primary-100:#DBEAFE; --primary-50:#EFF6FF;
+  --gold-600:#A67C00; --gold-500:#C9A227; --gold-400:#DFBE58;
+  --ink:#0F172A; --muted:#64748B; --line:#E2E8F0; --line-2:#CBD5E1;
+  --surface:#FFFFFF; --surface-2:#F8FAFC; --surface-3:#F1F5F9;
+}
+body.theme-miss {
+  --primary-950:#3B0764; --primary-900:#581C87; --primary-800:#6B21A8;
+  --primary-700:#7E22CE; --primary-600:#9333EA; --primary-500:#A855F7;
+  --primary-400:#C084FC; --primary-300:#D8B4FE; --primary-200:#E9D5FF;
+  --primary-100:#F3E8FF; --primary-50:#FAF5FF;
+}
+*{ font-weight:700; font-family:'Cairo',sans-serif; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body{
+  background: radial-gradient(1200px 600px at 80% -10%, var(--primary-100) 0%, transparent 55%),
+              linear-gradient(180deg,var(--primary-50) 0%, #E0F2FE 100%);
+  background-attachment:fixed; min-height:100vh; color:var(--ink); padding:20px 10px;
+  transition: background 0.4s ease;
+}
+.main-card{ background:var(--surface); border:1px solid var(--line); border-radius:26px; box-shadow:0 30px 60px -30px rgba(30,58,138,.45), 0 6px 18px -10px rgba(30,58,138,.15); overflow:hidden; display:flex; flex-direction:column; min-height:640px; padding:20px; max-width:800px; margin:0 auto; }
+.app-header{ margin:-20px -20px 22px; padding:28px 20px 24px; background:radial-gradient(130% 150% at 50% -30%, var(--primary-600) 0%, var(--primary-800) 45%, var(--primary-950) 100%); color:#fff; text-align:center; position:relative; overflow:hidden; transition:background 0.4s ease; }
+.app-header::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg,var(--gold-600),var(--gold-400),var(--gold-600)); }
+.app-title{ font-size:27px; font-weight:900; }
+.app-title .accent{ color:var(--gold-400); }
+.app-subtitle{ font-size:12px; font-weight:700; color:rgba(255,255,255,.85); margin-top:5px; }
+.role-card{ display:flex; align-items:center; gap:15px; width:100%; padding:17px; background:#fff; border:1.5px solid var(--line); border-radius:18px; text-align:right; cursor:pointer; transition:all .22s ease; margin-bottom:15px;}
+.role-card:hover{ border-color:var(--primary-700); transform:translateY(-2px); box-shadow:0 14px 28px -18px rgba(30,58,138,.7);}
+.role-icon{ width:56px; height:56px; border-radius:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:27px; background:linear-gradient(150deg,var(--primary-50),var(--primary-100)); border:1px solid var(--primary-200); }
+.field-label{ display:block; font-size:13px; font-weight:900; color:var(--primary-900); margin-bottom:7px; }
+.input-base{ width:100%; padding:12px 15px; background:#fff; border:1.5px solid var(--line-2); border-radius:14px; font-weight:800; font-size:15px; outline:none; transition:all .18s ease; margin-bottom:15px;}
+.input-base:focus{ border-color:var(--primary-600); box-shadow:0 0 0 4px rgba(37,99,235,.15); }
+select.input-base { appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:left 1rem center; background-size:1em; padding-left:2.5rem; }
+.option-btn { background:#F8FAFC; border:1.5px solid #CBD5E1; color:#475569; text-align:center; padding:10px 5px; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:all 0.2s ease; }
+input[type="radio"]:checked + .option-btn { background:linear-gradient(135deg,var(--primary-600),var(--primary-800)); color:white; border-color:var(--primary-800); box-shadow:0 4px 10px rgba(30,58,138,0.35); }
+input[type="radio"]:active + .option-btn { transform:scale(0.95); }
+.type-btn { background:#F8FAFC; border:1.5px solid #CBD5E1; color:#475569; text-align:center; padding:12px 5px; border-radius:12px; font-size:12px; font-weight:900; cursor:pointer; transition:all 0.2s ease; height:100%; }
+input[type="radio"][name="classType"]:checked + .type-btn { background:var(--primary-50); color:var(--primary-700); border-color:var(--primary-600); box-shadow:0 4px 10px rgba(37,99,235,0.2); }
+.btn-primary{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:14px; border-radius:14px; font-weight:900; font-size:16px; color:#fff; border:none; cursor:pointer; background:linear-gradient(135deg,var(--primary-600) 0%, var(--primary-900) 100%); box-shadow:0 12px 24px -14px rgba(30,58,138,.9); transition:all .22s ease; }
+.btn-primary:active{ transform:scale(.975); }
+.btn-ghost{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; border-radius:14px; font-weight:900; font-size:14px; cursor:pointer; background:var(--surface-3); color:var(--primary-800); border:1.5px solid var(--line); margin-bottom:15px;}
+.fade-enter{ opacity:0; transform:translateY(14px); transition:all .3s ease-out; pointer-events:none; position:absolute; width:100%; visibility:hidden; display:none;}
+.fade-enter-active{ opacity:1; transform:translateY(0); pointer-events:auto; position:relative; visibility:visible; display:block;}
+
+/* ==========================================
+   🎨 بطاقات المجموعات (بألوان صريحة وإطار كامل)
+   ========================================== */
+.class-card { 
+    background: #fff; 
+    border: 2px solid var(--line); 
+    border-radius: 16px; 
+    margin-bottom: 15px; 
+    box-shadow: 0 4px 12px -8px rgba(15,23,42,.15); 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    overflow: hidden; /* ضروري لكي يأخذ الهيدر الملون حواف دائرية */
+}
+.class-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px -8px rgba(15,23,42,.2); }
+
+.class-card[data-stage="kg"] { border-color: #F59E0B; }
+.class-card[data-stage="primary"] { border-color: #10B981; }
+.class-card[data-stage="prep"] { border-color: #3B82F6; }
+.class-card[data-stage="secondary"] { border-color: #8B5CF6; }
+.class-card[data-stage="custom"] { border-color: #EF4444; }
+
+.gender-badge { font-size:11px; font-weight:900; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; }
+.gender-badge.both { background:#F3F4F6; color:#374151; border:1px solid #D1D5DB; }
+.gender-badge.boys { background:var(--primary-50); color:var(--primary-700); border:1px solid var(--primary-200); }
+.gender-badge.girls { background:#FDF2F8; color:#BE185D; border:1px solid #FBCFE8; }
+.modal-overlay { position:fixed; inset:0; background:rgba(10,30,63,.85); z-index:9999; display:none; justify-content:center; align-items:center; backdrop-filter:blur(4px); padding:20px;}
+.modal-content { background:#fff; border-radius:24px; padding:20px; width:100%; max-width:500px; box-shadow:0 30px 60px -20px rgba(0,0,0,.6); animation:modalIn .3s ease-out; display:flex; flex-direction:column; max-height:85vh; overflow-y:auto;}
+@keyframes modalIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+#leafletMap { width:100%; height:300px; border-radius:14px; border:2px solid var(--line); z-index:0; }
+.excel-table { width:100%; border-collapse:collapse; background:#fff; text-align:right; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(30,58,138,0.08); }
+.excel-table th { padding:8px; font-size:11px; font-weight:900; border-bottom:2px solid; white-space:nowrap;}
+.excel-table td { padding:8px; font-size:12px; font-weight:700; border-bottom:1px solid #E2E8F0; vertical-align:middle; }
+
+.table-boys th { background:linear-gradient(135deg,#1E40AF 0%,#2563EB 100%); color:#FFFFFF; border-bottom-color:#1E3A8A; }
+.table-boys td { border-bottom-color:#DBEAFE; color:#1E3A8A; }
+.table-boys tbody tr:nth-child(5n+1) { background-color: #EFF6FF !important; }
+.table-boys tbody tr:nth-child(5n+2) { background-color: #F0F9FF !important; }
+.table-boys tbody tr:nth-child(5n+3) { background-color: #F0FDFA !important; }
+.table-boys tbody tr:nth-child(5n+4) { background-color: #F8FAFC !important; }
+.table-boys tbody tr:nth-child(5n+5) { background-color: #E0F2FE !important; }
+.table-girls th { background:linear-gradient(135deg,#BE185D 0%,#EC4899 100%); color:#FFFFFF; border-bottom-color:#9D174D; }
+.table-girls td { border-bottom-color:#FCE7F3; color:#9D174D; }
+.table-girls tbody tr:nth-child(5n+1) { background-color: #FDF2F8 !important; }
+.table-girls tbody tr:nth-child(5n+2) { background-color: #FFF1F2 !important; }
+.table-girls tbody tr:nth-child(5n+3) { background-color: #FAF5FF !important; }
+.table-girls tbody tr:nth-child(5n+4) { background-color: #FEF2F2 !important; }
+.table-girls tbody tr:nth-child(5n+5) { background-color: #FCE7F3 !important; }
+.excel-table tbody tr { transition: filter 0.2s ease; }
+.excel-table tbody tr:hover { filter: brightness(0.93); cursor: pointer; }
+
+.student-list-container { display:flex; gap:15px; flex-wrap:wrap; }
+.student-col { flex:1; min-width:280px; }
+.col-header { display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-radius:12px 12px 0 0; font-weight:900; color:white; }
+.col-header.boys { background:linear-gradient(135deg,#1E40AF 0%,#2563EB 100%); box-shadow:0 4px 12px -4px rgba(37,99,235,.4); }
+.col-header.girls { background:linear-gradient(135deg,#BE185D 0%,#EC4899 100%); box-shadow:0 4px 12px -4px rgba(236,72,153,.4); }
+.col-header .badge-white { background:#FFFFFF; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:900; }
+.col-header.boys .badge-white { color:#1D4ED8; }
+.col-header.girls .badge-white { color:#BE185D; }
+.payment-checkbox { width:1.2rem; height:1.2rem; cursor:pointer; accent-color:var(--primary-600); }
+.subject-chip { display:inline-flex; align-items:center; gap:5px; padding:8px 14px; border-radius:999px; font-size:13px; font-weight:900; background:#F8FAFC; border:1.5px solid #CBD5E1; color:#475569; cursor:pointer; transition:all 0.2s ease; user-select:none; }
+.subject-chip:active { transform:scale(0.95); }
+.subject-chip .check-icon { display:none; font-size:12px; }
+.subject-chip.selected .check-icon { display:inline; }
+.custom-subject-input { display:none; margin-top:8px; }
+.custom-subject-input.active { display:block; }
+.subject-display-tag { display:inline-block; background:var(--primary-50); color:var(--primary-700); border:1px solid var(--primary-200); padding:3px 10px; border-radius:999px; font-size:11px; font-weight:900; margin:2px 2px 0 0; }
+.stage-section-title { font-size:12px; font-weight:900; color:var(--primary-800); background:linear-gradient(90deg,var(--primary-100),transparent); padding:6px 12px; border-radius:8px; margin:10px 0 8px; display:flex; align-items:center; gap:6px; }
+.stage-section-title:first-child { margin-top:0; }
+.subject-divider { height:1px; background:#E2E8F0; margin:10px 0; }
+.teacher-info-card { background:linear-gradient(135deg,var(--primary-50) 0%,var(--primary-100) 100%); border:1px solid var(--primary-200); padding:16px; border-radius:14px; margin-bottom:24px; box-shadow:0 4px 12px -6px rgba(30,58,138,.2); }
+.teacher-info-card h2 { color:var(--primary-900); }
+.teacher-info-card p { color:var(--primary-700); }
+.stage-selector-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.stage-select-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 6px; border-radius:12px; font-size:12px; font-weight:900; background:#F8FAFC; border:1.5px solid #CBD5E1; color:#475569; cursor:pointer; transition:all .2s ease; }
+.stage-select-btn .stage-emoji { font-size:22px; }
+.stage-select-btn:active { transform:scale(0.96); }
+
+/* ألوان مخصصة لكل مرحلة دراسية والصفوف والمواد الخاصة بها */
+.stage-select-btn[data-stage="kg"].active, .grade-selector[data-stage="kg"] .grade-select-btn.active,
+.subjects-group[data-stage="kg"] .subject-chip.selected, .subject-chip.selected[data-stage="kg"] { 
+    background: linear-gradient(135deg, #F59E0B, #B45309) !important; color:#fff !important; border-color: #B45309 !important; box-shadow:0 4px 12px rgba(180, 83, 9, 0.35) !important; 
+}
+.stage-section-title[data-stage="kg"] { color: #92400E; background: linear-gradient(90deg, #FEF3C7, transparent); }
+.grade-selector[data-stage="kg"] .grade-select-btn .grade-num { color: #D97706; }
+
+.stage-select-btn[data-stage="primary"].active, .grade-selector[data-stage="primary"] .grade-select-btn.active,
+.subjects-group[data-stage="primary"] .subject-chip.selected, .subject-chip.selected[data-stage="primary"] { 
+    background: linear-gradient(135deg, #10B981, #047857) !important; color:#fff !important; border-color: #047857 !important; box-shadow:0 4px 12px rgba(4, 120, 87, 0.35) !important; 
+}
+.stage-section-title[data-stage="primary"] { color: #065F46; background: linear-gradient(90deg, #D1FAE5, transparent); }
+.grade-selector[data-stage="primary"] .grade-select-btn .grade-num { color: #059669; }
+
+.stage-select-btn[data-stage="prep"].active, .grade-selector[data-stage="prep"] .grade-select-btn.active,
+.subjects-group[data-stage="prep"] .subject-chip.selected, .subject-chip.selected[data-stage="prep"] { 
+    background: linear-gradient(135deg, #3B82F6, #1E40AF) !important; color:#fff !important; border-color: #1E40AF !important; box-shadow:0 4px 12px rgba(30, 64, 175, 0.35) !important; 
+}
+.stage-section-title[data-stage="prep"] { color: #1E40AF; background: linear-gradient(90deg, #DBEAFE, transparent); }
+.grade-selector[data-stage="prep"] .grade-select-btn .grade-num { color: #2563EB; }
+
+.stage-select-btn[data-stage="secondary"].active, .grade-selector[data-stage="secondary"] .grade-select-btn.active,
+.subjects-group[data-stage="secondary"] .subject-chip.selected, .subject-chip.selected[data-stage="secondary"] { 
+    background: linear-gradient(135deg, #8B5CF6, #5B21B6) !important; color:#fff !important; border-color: #5B21B6 !important; box-shadow:0 4px 12px rgba(91, 33, 182, 0.35) !important; 
+}
+.stage-section-title[data-stage="secondary"] { color: #5B21B6; background: linear-gradient(90deg, #EDE9FE, transparent); }
+.grade-selector[data-stage="secondary"] .grade-select-btn .grade-num { color: #7C3AED; }
+
+.subjects-group[data-stage="custom"] .subject-chip.selected, .subject-chip.selected[data-stage="custom"] {
+    background: linear-gradient(135deg, #EF4444, #991B1B) !important; color:#fff !important; border-color: #991B1B !important; box-shadow:0 4px 12px rgba(153, 27, 27, 0.35) !important; 
+}
+.grade-selector .grade-select-btn.active .grade-num { color: #fff !important; }
+
+.subject-filter-info { background:linear-gradient(135deg,#FEF3C7,#FDE68A); border:1px solid #FCD34D; color:#92400E; padding:8px 12px; border-radius:10px; font-size:12px; font-weight:900; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.grade-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
+.grade-select-btn { display:flex; flex-direction:column; align-items:center; gap:3px; padding:12px 4px; border-radius:12px; font-size:11px; font-weight:900; background:#F8FAFC; border:1.5px solid #CBD5E1; color:#475569; cursor:pointer; transition:all .2s ease; }
+.grade-select-btn .grade-num { font-size:16px; font-weight:900; color:var(--primary-700); }
+.grade-select-btn:active { transform:scale(0.96); }
+.contact-info-box { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--primary-200); padding:8px 12px; border-radius:10px; font-size:12px; color:var(--primary-800); margin-top:8px; }
+.contact-info-box .icon { font-size:16px; }
+.contact-info-box .num { direction:ltr; font-weight:900; letter-spacing:0.5px; }
+.days-selector { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.day-chip { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:10px 4px; border-radius:12px; font-size:11px; font-weight:900; background:#F8FAFC; border:1.5px solid #CBD5E1; color:#475569; cursor:pointer; transition:all .2s ease; user-select:none; }
+.day-chip .day-emoji { font-size:16px; }
+.day-chip.active { background:linear-gradient(135deg,var(--primary-600),var(--primary-900)); color:#fff; border-color:var(--primary-900); box-shadow:0 4px 12px rgba(30,58,138,.35); }
+.day-chip:active { transform:scale(0.95); }
+.time-inputs-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.time-input { width:100%; padding:10px 12px; background:#fff; border:1.5px solid var(--line-2); border-radius:12px; font-weight:800; font-size:14px; outline:none; transition:all .18s ease; text-align:center;}
+.time-input:focus { border-color:var(--primary-600); box-shadow:0 0 0 4px rgba(37,99,235,.15); }
+.duration-display { display:flex; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg,#ECFDF5,#D1FAE5); border:1px solid #6EE7B7; color:#065F46; padding:8px 12px; border-radius:10px; font-size:12px; font-weight:900; margin-top:8px; }
+.schedule-preview { display:flex; flex-wrap:wrap; gap:6px; background:#fff; border:1.5px dashed var(--primary-300); padding:10px; border-radius:12px; margin-top:10px; }
+.schedule-tag { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,var(--primary-600),var(--primary-900)); color:#fff; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:900; }
+
+.subjects-group {
+    background: #FFFFFF;
+    border: 1.5px solid var(--primary-200);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px -4px rgba(30,58,138,.15);
+    position: relative;
+    overflow: hidden;
+}
+.subjects-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--primary-600), var(--primary-900));
+}
+.subjects-group[data-stage="kg"]::before { background: linear-gradient(180deg,#F59E0B,#B45309); }
+.subjects-group[data-stage="primary"]::before { background: linear-gradient(180deg,#10B981,#047857); }
+.subjects-group[data-stage="prep"]::before { background: linear-gradient(180deg,#3B82F6,#1E40AF); }
+.subjects-group[data-stage="secondary"]::before { background: linear-gradient(180deg,#8B5CF6,#5B21B6); }
+.subjects-group[data-stage="custom"]::before { background: linear-gradient(180deg,#EF4444,#991B1B); }
+
+.subjects-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin: -6px 0 10px 0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 900;
+}
+.subjects-group[data-stage="kg"] .subjects-group-header { background: linear-gradient(90deg,#FEF3C7,transparent); color:#92400E; }
+.subjects-group[data-stage="primary"] .subjects-group-header { background: linear-gradient(90deg,#D1FAE5,transparent); color:#065F46; }
+.subjects-group[data-stage="prep"] .subjects-group-header { background: linear-gradient(90deg,#DBEAFE,transparent); color:#1E40AF; }
+.subjects-group[data-stage="secondary"] .subjects-group-header { background: linear-gradient(90deg,#EDE9FE,transparent); color:#5B21B6; }
+.subjects-group[data-stage="custom"] .subjects-group-header { background: linear-gradient(90deg,#FEE2E2,transparent); color:#991B1B; }
+
+.subjects-group-header .count-badge {
+    background: rgba(255,255,255,.7);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    margin-right: auto;
+}
+
+.stage-separator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 10px 0;
+    color: var(--primary-700);
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.stage-separator .sep-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-300), transparent);
+}
+.stage-separator .sep-emoji {
+    font-size: 14px;
+    padding: 2px 8px;
+    background: var(--primary-100);
+    border-radius: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="main-card relative">
+    <header class="app-header">
+        <h1 class="app-title">منصة <span class="accent">احجزلى</span></h1>
+        <p class="app-subtitle">بوابة المعلم - إدارة المجموعات والدروس</p>
+    </header>
+
+    <div class="flex-1 relative w-full">
+        <div id="roleView" class="fade-enter-active">
+            <h2 class="text-[16px] font-black text-[var(--primary-900)] mb-4 flex items-center gap-2"><span class="w-1 h-5 bg-[#C9A227] rounded"></span> ما هو دورك؟</h2>
+            
+            <button onclick="checkTeacherProfile()" class="role-card">
+                <div class="role-icon">👨‍🏫</div>
+                <div class="text-right flex-1">
+                    <h3 class="text-lg font-black text-slate-900">أنا أستاذ / مستر</h3>
+                    <p class="text-[13px] text-slate-500 font-bold mt-1">إدارة المجموعات، وتسجيل الطلاب والمدفوعات</p>
+                </div>
+            </button>
+            
+            <button onclick="alert('واجهة الطالب سيتم برمجتها في الخطوة القادمة ⏳');" class="role-card" style="opacity: 0.6;">
+                <div class="role-icon">🎓</div>
+                <div class="text-right flex-1">
+                    <h3 class="text-lg font-black text-slate-900">أنا طالب (قريباً)</h3>
+                    <p class="text-[13px] text-slate-500 font-bold mt-1">حجز الدروس الخصوصية عبر المنصة</p>
+                </div>
+            </button>
+        </div>
+
+        <!-- صفحة البروفايل -->
+        <div id="teacherProfileView" class="fade-enter">
+            <button onclick="showView('roleView')" class="btn-ghost mb-4 text-xs !w-auto px-4 py-2">🔙 عودة</button>
+            <h2 class="text-[18px] font-black text-[var(--primary-900)] mb-4">بيانات المعلم الأساسية 👤</h2>
+            
+            <form id="teacherProfileForm" onsubmit="handleTeacherProfile(event)">
+                <label class="field-label">اللقب</label>
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <label>
+                        <input type="radio" name="teacherTitle" value="مستر" checked class="hidden" onchange="applyTheme('مستر')">
+                        <div class="option-btn flex justify-center items-center gap-2">👨‍🏫 مستر</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="teacherTitle" value="مس" class="hidden" onchange="applyTheme('مس')">
+                        <div class="option-btn flex justify-center items-center gap-2">👩‍🏫 مس</div>
+                    </label>
+                </div>
+                
+                <label class="field-label">اسم المعلم</label>
+                <input type="text" id="teacherName" required placeholder="الاسم (مثال: أحمد محمد)" class="input-base">
+
+                <label class="field-label">رقم الهاتف <span class="text-rose-500">*</span></label>
+                <div class="relative mb-4">
+                    <input type="tel" id="teacherPhone" required 
+                           placeholder="01xxxxxxxxx" 
+                           pattern="01[0-9]{9}"
+                           maxlength="11"
+                           oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                           class="input-base !mb-0 text-left pr-3 pl-20 font-black tracking-wider" dir="ltr">
+                    <span class="absolute top-1/2 -translate-y-1/2 right-3 text-slate-400 text-xs font-bold">📱 رقمك</span>
+                </div>
+                <p class="text-[11px] text-slate-500 font-bold mb-4 -mt-2">💡 سيظهر هذا الرقم للطلاب للتواصل معك عند الحجز</p>
+
+                <label class="field-label">المرحلة الدراسية التي تُدرّسها <span class="text-rose-500">*</span></label>
+                <div class="stage-selector-grid mb-4" id="stageSelectorGrid">
+                    <div class="stage-select-btn" data-stage="kg" onclick="toggleStageSelection('kg')">
+                        <span class="stage-emoji">🧸</span>
+                        <span>رياض أطفال</span>
+                    </div>
+                    <div class="stage-select-btn" data-stage="primary" onclick="toggleStageSelection('primary')">
+                        <span class="stage-emoji">📗</span>
+                        <span>الابتدائية</span>
+                    </div>
+                    <div class="stage-select-btn" data-stage="prep" onclick="toggleStageSelection('prep')">
+                        <span class="stage-emoji">📘</span>
+                        <span>الإعدادية</span>
+                    </div>
+                    <div class="stage-select-btn" data-stage="secondary" onclick="toggleStageSelection('secondary')">
+                        <span class="stage-emoji">📙</span>
+                        <span>الثانوية</span>
+                    </div>
+                </div>
+
+                <label class="field-label">الصفوف الدراسية التي تُدرّسها <span class="text-rose-500">*</span></label>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4" id="gradesWrapper">
+                    <div id="gradesPlaceholder" class="text-center py-6 text-slate-400 font-black text-xs">
+                        👆 اختر المرحلة الدراسية أولاً لعرض الصفوف المتاحة
+                    </div>
+                    
+                    <div id="gradesDynamicArea" class="hidden">
+                        <div id="gradesContainer"></div>
+                    </div>
+                </div>
+
+                <label class="field-label">المواد الدراسية التي تُدرّسها <span class="text-rose-500">*</span></label>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4" id="subjectsWrapper">
+                    <div id="subjectsPlaceholder" class="text-center py-8 text-slate-400 font-black text-xs">
+                        👆 اختر المرحلة الدراسية أولاً لعرض المواد المتاحة
+                    </div>
+                    
+                    <div id="subjectsDynamicArea" class="hidden">
+                        <div id="subjectFilterInfo" class="subject-filter-info hidden">
+                            <span>🎯</span>
+                            <span id="filterText">عرض المواد للمرحلة المختارة</span>
+                        </div>
+                        
+                        <!-- ✅ المواد ستُرسم هنا مقسمة بفواصل لكل مرحلة -->
+                        <div id="subjectsContainer"></div>
+                        
+                        <div class="mt-3 pt-3 border-t border-slate-200">
+                            <button type="button" onclick="toggleCustomSubject()" class="w-full bg-white border border-dashed border-[var(--primary-400)] text-[var(--primary-700)] font-black py-2 rounded-lg text-xs hover:bg-[var(--primary-50)] transition-colors">
+                                ➕ إضافة مادة أخرى (غير موجودة بالقائمة)
+                            </button>
+                            <div id="customSubjectWrapper" class="custom-subject-input">
+                                <div class="flex gap-2 mt-2">
+                                    <input type="text" id="customSubjectInput" placeholder="اكتب اسم المادة..." class="input-base !mb-0 flex-1 text-sm">
+                                    <button type="button" onclick="addCustomSubject()" class="bg-[var(--primary-600)] text-white font-black px-4 rounded-xl text-xs">إضافة</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="selectedSubjectsPreview" class="mt-3 pt-3 border-t border-slate-200 hidden">
+                            <p class="text-[11px] text-slate-500 font-black mb-2">✅ المواد المختارة:</p>
+                            <div id="selectedSubjectsTags" class="flex flex-wrap gap-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="field-label">المحافظة</label>
+                <select id="govName" required class="input-base">
+                    <option value="" disabled selected>اختر المحافظة...</option>
+                    <option value="الدقهلية">الدقهلية</option>
+                    <option value="القاهرة">القاهرة</option>
+                    <option value="الجيزة">الجيزة</option>
+                    <option value="الإسكندرية">الإسكندرية</option>
+                    <option value="الشرقية">الشرقية</option>
+                    <option value="الغربية">الغربية</option>
+                </select>
+                
+                <button type="submit" class="btn-primary mt-2">حفظ ودخول للوحة التحكم 🚀</button>
+            </form>
+        </div>
+
+        <!-- لوحة تحكم المعلم -->
+        <div id="teacherDashboardView" class="fade-enter">
+            <button onclick="showView('teacherProfileView')" class="btn-ghost mb-4 text-xs !w-auto px-4 py-2">⚙️ تعديل بياناتي</button>
+            
+            <div class="teacher-info-card">
+                <h2 id="dashTeacherName" class="text-[18px] font-black">مرحباً، --</h2>
+                <p id="dashTeacherSubject" class="text-sm font-bold mt-1">📍 محافظة: --</p>
+                <div class="contact-info-box">
+                    <span class="icon">📱</span>
+                    <span>رقم التواصل:</span>
+                    <span class="num" id="dashTeacherPhone">--</span>
+                </div>
+                <div id="dashGradesTags" class="flex flex-wrap gap-1 mt-2"></div>
+                <div id="dashSubjectsTags" class="flex flex-wrap gap-1 mt-2"></div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-black text-[var(--primary-950)] text-[16px]">مجموعاتي 📋</h3>
+                <button onclick="showView('teacherClassDetailsView')" class="bg-[var(--primary-600)] text-white font-black text-xs px-4 py-2 rounded-lg shadow-md active:scale-95 transition-all hover:bg-[var(--primary-700)]">➕ إضافة مجموعة</button>
+            </div>
+
+            <div id="teacherClassesList" class="space-y-3 pb-4"></div>
+        </div>
+
+        <!-- تفاصيل المجموعة -->
+        <div id="groupDetailsView" class="fade-enter">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="showView('teacherDashboardView')" class="btn-ghost !m-0 !w-auto px-4 py-2 text-xs">🔙 عودة للمجموعات</button>
+                <div class="bg-[var(--primary-50)] text-[var(--primary-800)] px-3 py-1.5 rounded-lg border border-[var(--primary-200)] text-xs font-black" id="groupDetailName">مجموعة: --</div>
+            </div>
+
+            <button onclick="openManualAddModal()" class="w-full bg-[var(--primary-700)] text-white font-black py-3 rounded-xl shadow-md mb-4 active:scale-95 transition-all text-sm hover:bg-[var(--primary-800)]">
+                ➕ تسجيل حجز يدوياً (مباشر)
+            </button>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-3 mb-4 shadow-sm flex flex-col items-center">
+                <p class="text-[11px] text-slate-500 font-bold mb-1">إجمالي المحجوز في المجموعة</p>
+                <h3 class="text-2xl font-black text-[var(--primary-950)]" dir="ltr" id="groupDetailTotal">0 / 0</h3>
+            </div>
+
+            <div class="student-list-container" id="excelTablesContainer"></div>
+        </div>
+
+        <!-- إضافة مجموعة جديدة -->
+        <div id="teacherClassDetailsView" class="fade-enter">
+            <button onclick="showView('teacherDashboardView')" class="btn-ghost mb-4 text-xs !w-auto px-4 py-2">🔙 إلغاء والعودة للوحة التحكم</button>
+            <h2 class="text-[18px] font-black text-[var(--primary-900)] mb-4">➕ إضافة مجموعة جديدة 📚</h2>
+            
+            <form id="addClassForm" onsubmit="handleAddClass(event)">
+                
+                <label class="field-label">المادة الدراسية <span class="text-rose-500">*</span></label>
+                <div id="classSubjectContainer" class="flex flex-wrap gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200"></div>
+
+                <label class="field-label">الصف الدراسي <span class="text-rose-500">*</span></label>
+                <div id="classGradeContainer" class="flex flex-wrap gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200"></div>
+
+                <label class="field-label">اسم المجموعة <span class="text-rose-500">*</span></label>
+                <input type="text" id="groupName" required placeholder="مثال: مجموعة السبت، المجموعة الأولى..." class="input-base">
+
+                <label class="field-label">الفئة المسموح بها</label>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <label>
+                        <input type="radio" name="targetGender" value="both" checked class="hidden">
+                        <div class="option-btn">👫 ولاد وبنات</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="targetGender" value="boys" class="hidden">
+                        <div class="option-btn">👦 ولاد فقط</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="targetGender" value="girls" class="hidden">
+                        <div class="option-btn">👧 بنات فقط</div>
+                    </label>
+                </div>
+
+                <label class="field-label">مكان ونوع الدرس</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                    <label>
+                        <input type="radio" name="classType" value="center" checked class="hidden" onchange="updateLocationPlaceholder()">
+                        <div class="type-btn flex flex-col items-center justify-center">
+                            <span class="text-xl mb-1">🏫</span><span>مجموعة بسنتر</span>
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="classType" value="teacher_home" class="hidden" onchange="updateLocationPlaceholder()">
+                        <div class="type-btn flex flex-col items-center justify-center">
+                            <span class="text-xl mb-1">🏡</span><span>بيت المستر</span>
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="classType" value="student_home" class="hidden" onchange="updateLocationPlaceholder()">
+                        <div class="type-btn flex flex-col items-center justify-center">
+                            <span class="text-xl mb-1">🚗</span><span>يروح للطالب</span>
+                        </div>
+                    </label>
+                </div>
+                
+                <label class="field-label" id="locationLabel">اسم السنتر / العنوان التفصيلي</label>
+                <input type="text" id="centerName" required placeholder="مثال: سنتر الأوائل - شارع المحطة" class="input-base">
+
+                <div class="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <label class="field-label">الموقع الجغرافي (للبحث بـ GPS)</label>
+                    <button type="button" onclick="openMapModal()" class="btn-ghost !bg-[var(--primary-50)] !text-[var(--primary-700)] !border-[var(--primary-200)] !mb-2 !py-3">
+                        📍 حدد النقطة على الخريطة
+                    </button>
+                    <p id="teacherLocationStatus" class="text-xs text-rose-600 font-bold text-center">❌ لم يتم تحديد الموقع بعد (مطلوب)</p>
+                    <input type="hidden" id="teacherLat">
+                    <input type="hidden" id="teacherLng">
+                </div>
+                
+                <label class="field-label">أيام الأسبوع <span class="text-rose-500">*</span></label>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4">
+                    <div class="days-selector" id="daysSelector"></div>
+                </div>
+
+                <label class="field-label">وقت الحصة <span class="text-rose-500">*</span></label>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4">
+                    <div class="time-inputs-grid">
+                        <div>
+                            <p class="text-[11px] text-slate-600 font-black mb-2 text-center">⏰ وقت البداية</p>
+                            <input type="time" id="startTime" required class="time-input" value="16:00">
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-600 font-black mb-2 text-center">🏁 وقت النهاية</p>
+                            <input type="time" id="endTime" required class="time-input" value="18:00">
+                        </div>
+                    </div>
+                    <div class="duration-display mt-3" id="durationDisplay">
+                        ⏱️ مدة الحصة: -- ساعة
+                    </div>
+                    <div class="schedule-preview" id="schedulePreview">
+                        <span class="text-[11px] text-slate-400 font-black">لم يتم اختيار أيام بعد</span>
+                    </div>
+                </div>
+
+                <label class="field-label">العدد المطلوب (الحد الأقصى للطلاب)</label>
+                <input type="number" id="maxCapacity" required placeholder="مثال: 30" min="1" class="input-base text-center">
+                
+                <button type="submit" class="btn-primary mt-2">حفظ ونشر المجموعة ✔️</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal الخريطة -->
+<div id="mapModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 class="text-center font-black mb-3 text-[var(--primary-900)] text-lg">📍 حرّك الخريطة لتحديد الموقع</h3>
+        <div id="leafletMap"></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+            <button type="button" onclick="closeMapModal()" class="btn-ghost !mb-0 py-3 bg-slate-100">إلغاء</button>
+            <button type="button" onclick="confirmLocation()" class="btn-primary !mb-0 py-3 border-none shadow-md">تأكيد الموقع ✔️</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة طالب -->
+<div id="manualAddModal" class="modal-overlay">
+    <div class="modal-content !h-auto">
+        <h3 class="text-center font-black mb-4 text-[var(--primary-900)] text-lg">➕ تسجيل طالب جديد يدوياً</h3>
+        <form onsubmit="handleManualAdd(event)">
+            <input type="hidden" id="manualClassId">
+            
+            <label class="field-label">اسم الطالب</label>
+            <input type="text" id="manualStudentName" required placeholder="الاسم الثلاثي" class="input-base">
+            
+            <label class="field-label">رقم الهاتف</label>
+            <input type="tel" id="manualStudentPhone" required placeholder="01xxxxxxxxx" class="input-base text-left" dir="ltr">
+            
+            <label class="field-label">نوع الطالب</label>
+            <div class="grid grid-cols-2 gap-2 mb-4" id="manualGenderSelect">
+                <label>
+                    <input type="radio" name="manualStudentGender" value="boy" checked class="hidden">
+                    <div class="option-btn">👦 ولد</div>
+                </label>
+                <label>
+                    <input type="radio" name="manualStudentGender" value="girl" class="hidden">
+                    <div class="option-btn">👧 بنت</div>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <button type="button" onclick="closeManualAddModal()" class="btn-ghost !mb-0 py-3 bg-slate-100">إلغاء</button>
+                <button type="submit" class="btn-primary !mb-0 py-3 border-none shadow-md">تسجيل الطالب ✔️</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal المدفوعات -->
+<div id="paymentModal" class="modal-overlay">
+    <div class="modal-content !max-w-md">
+        <h3 class="text-center font-black mb-2 text-[var(--primary-900)] text-lg">💳 السجل المالي للطالب</h3>
+        <div id="paymentStudentName" class="text-center font-bold text-sm bg-[var(--primary-50)] text-[var(--primary-800)] border border-[var(--primary-200)] p-2 rounded-lg mb-4">...</div>
+
+        <form onsubmit="saveStudentPayment(event)">
+            <div class="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <label class="field-label text-slate-700 !mb-2">الدفع بالترم</label>
+                <div class="flex gap-2">
+                    <label class="flex-1 bg-white border border-slate-300 p-2 rounded text-sm font-bold flex items-center justify-between cursor-pointer hover:bg-slate-50">
+                        الترم الأول <input type="checkbox" id="payTerm1" class="payment-checkbox">
+                    </label>
+                    <label class="flex-1 bg-white border border-slate-300 p-2 rounded text-sm font-bold flex items-center justify-between cursor-pointer hover:bg-slate-50">
+                        الترم الثاني <input type="checkbox" id="payTerm2" class="payment-checkbox">
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <label class="field-label text-slate-700 !mb-2">الدفع الشهري</label>
+                <div class="grid grid-cols-3 gap-2 text-xs" id="monthCheckboxes"></div>
+            </div>
+
+            <div class="flex gap-3 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div class="flex-1">
+                    <label class="field-label text-slate-700 !text-xs !mb-2 text-center">دفع حصص</label>
+                    <input type="number" id="paySessions" min="0" class="input-base !mb-0 text-center !p-2" value="0">
+                </div>
+                <div class="flex-1">
+                    <label class="field-label text-slate-700 !text-xs !mb-2 text-center">دفع أسابيع</label>
+                    <input type="number" id="payWeeks" min="0" class="input-base !mb-0 text-center !p-2" value="0">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <button type="button" onclick="closePaymentModal()" class="btn-ghost !mb-0 py-3 bg-slate-100">إلغاء</button>
+                <button type="submit" class="btn-primary !mb-0 py-3 border-none shadow-md">حفظ السجل ✔️</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const WEEK_DAYS = [
+        { key: 'sat', name: 'السبت', emoji: '🌙' },
+        { key: 'sun', name: 'الأحد', emoji: '☀️' },
+        { key: 'mon', name: 'الاثنين', emoji: '🌤️' },
+        { key: 'tue', name: 'الثلاثاء', emoji: '⛅' },
+        { key: 'wed', name: 'الأربعاء', emoji: '🌥️' },
+        { key: 'thu', name: 'الخميس', emoji: '🌦️' },
+        { key: 'fri', name: 'الجمعة', emoji: '🌟' }
+    ];
+
+    let selectedDays = [];
+
+    function renderDaysSelector() {
+        const container = document.getElementById('daysSelector');
+        if(!container) return;
+        
+        container.innerHTML = WEEK_DAYS.map(day => {
+            const isActive = selectedDays.includes(day.key);
+            return `<div class="day-chip ${isActive ? 'active' : ''}" onclick="toggleDay('${day.key}')">
+                <span class="day-emoji">${day.emoji}</span>
+                <span>${day.name}</span>
+            </div>`;
+        }).join('');
+    }
+
+    function toggleDay(dayKey) {
+        const idx = selectedDays.indexOf(dayKey);
+        if(idx > -1) selectedDays.splice(idx, 1);
+        else selectedDays.push(dayKey);
+        renderDaysSelector();
+        updateSchedulePreview();
+    }
+
+    function updateSchedulePreview() {
+        const preview = document.getElementById('schedulePreview');
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        
+        if(selectedDays.length === 0) {
+            preview.innerHTML = '<span class="text-[11px] text-slate-400 font-black">لم يتم اختيار أيام بعد</span>';
+            updateDuration();
+            return;
+        }
+        
+        const orderedDays = WEEK_DAYS.filter(d => selectedDays.includes(d.key));
+        const timeText = (startTime && endTime) ? ` (${formatTime(startTime)} - ${formatTime(endTime)})` : '';
+        
+        preview.innerHTML = orderedDays.map(d => 
+            `<span class="schedule-tag">📅 ${d.name}${timeText}</span>`
+        ).join('');
+        
+        updateDuration();
+    }
+
+    function formatTime(time) {
+        if(!time) return '';
+        const [h, m] = time.split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'م' : 'ص';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${m} ${ampm}`;
+    }
+
+    function updateDuration() {
+        const display = document.getElementById('durationDisplay');
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        
+        if(!startTime || !endTime) {
+            display.innerHTML = '⏱️ مدة الحصة: -- ساعة';
+            return;
+        }
+        
+        const [sh, sm] = startTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        let minutes = (eh * 60 + em) - (sh * 60 + sm);
+        
+        if(minutes <= 0) {
+            display.innerHTML = '⚠️ وقت النهاية يجب أن يكون بعد البداية';
+            display.style.background = 'linear-gradient(135deg,#FEE2E2,#FECACA)';
+            display.style.borderColor = '#FCA5A5';
+            display.style.color = '#991B1B';
+            return;
+        }
+        
+        display.style.background = 'linear-gradient(135deg,#ECFDF5,#D1FAE5)';
+        display.style.borderColor = '#6EE7B7';
+        display.style.color = '#065F46';
+        
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        let durationText = '';
+        
+        if(hours > 0 && mins > 0) durationText = `${hours} ساعة و ${mins} دقيقة`;
+        else if(hours > 0) durationText = `${hours} ساعة`;
+        else durationText = `${mins} دقيقة`;
+        
+        display.innerHTML = `⏱️ مدة الحصة: ${durationText}`;
+    }
+
+    const EDUCATION_STRUCTURE = {
+        kg: {
+            name: 'رياض الأطفال', emoji: '🧸',
+            grades: ['KG 1', 'KG 2'],
+            subjects: ['لغة عربية (KG)','لغة إنجليزية (KG)','رياضيات (KG)','تربية دينية (KG)','تربية رياضية (KG)']
+        },
+        primary: {
+            name: 'المرحلة الابتدائية', emoji: '📗',
+            grades: ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
+            subjects: ['لغة عربية (ابتدائي)','لغة إنجليزية (ابتدائي)','رياضيات (ابتدائي)','علوم (ابتدائي)','دراسات اجتماعية (ابتدائي)','تربية دينية (ابتدائي)','تربية فنية (ابتدائي)','تكنولوجيا المعلومات (ابتدائي)','تربية رياضية (ابتدائي)','لغة فرنسية (ابتدائي)']
+        },
+        prep: {
+            name: 'المرحلة الإعدادية', emoji: '📘',
+            grades: ['الأول الإعدادي', 'الثاني الإعدادي', 'الثالث الإعدادي'],
+            subjects: ['لغة عربية (إعدادي)','لغة إنجليزية (إعدادي)','رياضيات (إعدادي)','علوم (إعدادي)','دراسات اجتماعية (إعدادي)','تربية دينية (إعدادي)','تربية فنية (إعدادي)','كمبيوتر وتكنولوجيا المعلومات (إعدادي)','تربية رياضية (إعدادي)','لغة فرنسية (إعدادي)']
+        },
+        secondary: {
+            name: 'المرحلة الثانوية', emoji: '📙',
+            grades: ['الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي'],
+            subjects: ['لغة عربية (ثانوي)','لغة إنجليزية (ثانوي)','لغة فرنسية (ثانوي)','لغة ألمانية (ثانوي)','لغة إيطالية (ثانوي)','لغة إسبانية (ثانوي)','تاريخ (ثانوي)','جغرافيا (ثانوي)','فلسفة ومنطق (ثانوي)','رياضيات (ثانوي)','علوم متكاملة (ثانوي)','فيزياء (ثانوي)','كيمياء (ثانوي)','أحياء (ثانوي)','جيولوجيا (ثانوي)','علم نفس واجتماع (ثانوي)','رياضيات بحتة (ثانوي)','إحصاء (ثانوي)','تربية دينية (ثانوي)','تربية وطنية (ثانوي)','حاسب آلي (ثانوي)']
+        }
+    };
+
+    function getStageForSubject(subName) {
+        for (const [key, stage] of Object.entries(EDUCATION_STRUCTURE)) {
+            if (stage.subjects.includes(subName)) return key;
+        }
+        return 'custom';
+    }
+
+    function getStageForGrade(gradeName) {
+        for (const [key, stage] of Object.entries(EDUCATION_STRUCTURE)) {
+            if (stage.grades.includes(gradeName)) return key;
+        }
+        return 'custom';
+    }
+
+    function applyTheme(title) {
+        if(title === 'مس') document.body.classList.add('theme-miss');
+        else document.body.classList.remove('theme-miss');
+    }
+
+    let mapInstance = null, mapMarker = null, tempLat = null, tempLng = null;
+
+    function openMapModal() {
+        document.getElementById('mapModal').style.display = 'flex';
+        if (!mapInstance) {
+            mapInstance = L.map('leafletMap').setView([31.0409, 31.3785], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(mapInstance);
+            mapMarker = L.marker([31.0409, 31.3785], { draggable: true }).addTo(mapInstance);
+            mapInstance.on('click', e => { mapMarker.setLatLng(e.latlng); tempLat = e.latlng.lat; tempLng = e.latlng.lng; });
+            mapMarker.on('dragend', () => { let pos = mapMarker.getLatLng(); tempLat = pos.lat; tempLng = pos.lng; });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    let lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    mapInstance.setView([lat, lng], 14); mapMarker.setLatLng([lat, lng]); tempLat = lat; tempLng = lng;
+                }, () => {}, { enableHighAccuracy: true });
+            }
+        }
+        setTimeout(() => { mapInstance.invalidateSize(); }, 300);
+    }
+    function closeMapModal() { document.getElementById('mapModal').style.display = 'none'; }
+    function confirmLocation() {
+        if(!tempLat || !tempLng) { let pos = mapMarker.getLatLng(); tempLat = pos.lat; tempLng = pos.lng; }
+        document.getElementById('teacherLat').value = tempLat; document.getElementById('teacherLng').value = tempLng;
+        const status = document.getElementById('teacherLocationStatus');
+        status.innerText = "✅ تم حفظ الموقع الجغرافي بنجاح"; 
+        status.className = "text-xs text-[var(--primary-600)] font-bold text-center";
+        closeMapModal();
+    }
+
+    function updateLocationPlaceholder() {
+        const type = document.querySelector('input[name="classType"]:checked').value;
+        const label = document.getElementById('locationLabel');
+        const input = document.getElementById('centerName');
+        if(type === 'center') { label.innerText = 'اسم السنتر / العنوان التفصيلي'; input.placeholder = 'مثال: سنتر الأوائل - شارع المحطة'; } 
+        else if(type === 'teacher_home') { label.innerText = 'عنوان منزل المستر التفصيلي'; input.placeholder = 'مثال: حي الجامعة - شارع جيهان'; } 
+        else if(type === 'student_home') { label.innerText = 'النطاق المتاح للذهاب إليه'; input.placeholder = 'مثال: المنصورة'; }
+    }
+
+    function showView(viewId) {
+        document.querySelectorAll('.fade-enter-active, .fade-enter').forEach(el => {
+            if (['roleView', 'teacherProfileView', 'teacherDashboardView', 'teacherClassDetailsView', 'groupDetailsView'].includes(el.id)) {
+                el.classList.remove('fade-enter-active'); el.classList.add('fade-enter');
+            }
+        });
+        const target = document.getElementById(viewId);
+        target.classList.remove('fade-enter'); target.classList.add('fade-enter-active');
+        if(viewId === 'teacherDashboardView') renderTeacherDashboard();
+    }
+
+    let selectedStages = [];
+    let selectedGrades = [];
+    let selectedSubjects = [];
+
+    function toggleStageSelection(stageKey) {
+        const idx = selectedStages.indexOf(stageKey);
+        if(idx > -1) {
+            selectedStages.splice(idx, 1);
+            selectedGrades = selectedGrades.filter(grade => getStageForGrade(grade) !== stageKey);
+            selectedSubjects = selectedSubjects.filter(sub => getStageForSubject(sub) !== stageKey);
+        } else {
+            selectedStages.push(stageKey);
+        }
+        updateStageButtonsUI();
+        renderGradesForSelectedStages();
+        renderSubjectsForSelectedStages();
+    }
+
+    function updateStageButtonsUI() {
+        document.querySelectorAll('.stage-select-btn').forEach(btn => {
+            const stageKey = btn.getAttribute('data-stage');
+            if(selectedStages.includes(stageKey)) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    function renderGradesForSelectedStages() {
+        const placeholder = document.getElementById('gradesPlaceholder');
+        const dynamicArea = document.getElementById('gradesDynamicArea');
+        const container = document.getElementById('gradesContainer');
+
+        if(selectedStages.length === 0) {
+            placeholder.classList.remove('hidden');
+            dynamicArea.classList.add('hidden');
+            return;
+        }
+
+        placeholder.classList.add('hidden');
+        dynamicArea.classList.remove('hidden');
+
+        container.innerHTML = '';
+        selectedStages.forEach(stageKey => {
+            const stage = EDUCATION_STRUCTURE[stageKey];
+            const gradesHTML = stage.grades.map(grade => {
+                const isSelected = selectedGrades.includes(grade);
+                return `<div class="grade-select-btn ${isSelected ? 'active' : ''}" onclick="toggleGrade('${grade.replace(/'/g, "\\'")}')">
+                    <span class="grade-num">${grade.split(' ')[0]}</span>
+                    <span>${grade.split(' ').slice(1).join(' ')}</span>
+                </div>`;
+            }).join('');
+
+            container.innerHTML += `
+                <div class="stage-section-title" data-stage="${stageKey}">${stage.emoji} ${stage.name}</div>
+                <div class="grade-selector" data-stage="${stageKey}">${gradesHTML}</div>
+            `;
+        });
+    }
+
+    function toggleGrade(grade) {
+        const idx = selectedGrades.indexOf(grade);
+        if(idx > -1) selectedGrades.splice(idx, 1);
+        else selectedGrades.push(grade);
+        renderGradesForSelectedStages();
+    }
+
+    function renderSubjectsForSelectedStages() {
+        const placeholder = document.getElementById('subjectsPlaceholder');
+        const dynamicArea = document.getElementById('subjectsDynamicArea');
+        const container = document.getElementById('subjectsContainer');
+        const filterInfo = document.getElementById('subjectFilterInfo');
+        const filterText = document.getElementById('filterText');
+
+        if(selectedStages.length === 0) {
+            placeholder.classList.remove('hidden');
+            dynamicArea.classList.add('hidden');
+            return;
+        }
+
+        placeholder.classList.add('hidden');
+        dynamicArea.classList.remove('hidden');
+
+        const stageNames = selectedStages.map(s => EDUCATION_STRUCTURE[s].name).join(' + ');
+        filterText.innerText = `عرض المواد لمرحلة: ${stageNames}`;
+        filterInfo.classList.remove('hidden');
+
+        container.innerHTML = '';
+        
+        const stageOrder = ['kg', 'primary', 'prep', 'secondary'];
+        const orderedSelectedStages = stageOrder.filter(s => selectedStages.includes(s));
+        
+        orderedSelectedStages.forEach((stageKey, idx) => {
+            const stage = EDUCATION_STRUCTURE[stageKey];
+            
+            if(idx > 0) {
+                container.innerHTML += `
+                    <div class="stage-separator">
+                        <div class="sep-line"></div>
+                        <span class="sep-emoji">${stage.emoji}</span>
+                        <div class="sep-line"></div>
+                    </div>
+                `;
+            }
+            
+            const selectedCount = stage.subjects.filter(s => selectedSubjects.includes(s)).length;
+            
+            const subjectsChips = stage.subjects.map(sub => {
+                const isSelected = selectedSubjects.includes(sub);
+                return `<div class="subject-chip ${isSelected ? 'selected' : ''}" onclick="toggleSubject('${sub.replace(/'/g, "\\'")}')">
+                    <span class="check-icon">✓</span> ${sub}
+                </div>`;
+            }).join('');
+            
+            container.innerHTML += `
+                <div class="subjects-group" data-stage="${stageKey}">
+                    <div class="subjects-group-header">
+                        <span>${stage.emoji}</span>
+                        <span>${stage.name}</span>
+                        <span class="count-badge">${selectedCount} / ${stage.subjects.length}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${subjectsChips}
+                    </div>
+                </div>
+            `;
+        });
+        
+        const savedCustom = JSON.parse(localStorage.getItem('custom_subjects') || '[]');
+        if(savedCustom.length > 0) {
+            const selectedCustomCount = savedCustom.filter(s => selectedSubjects.includes(s)).length;
+            
+            container.innerHTML += `
+                <div class="stage-separator">
+                    <div class="sep-line"></div>
+                    <span class="sep-emoji">➕</span>
+                    <div class="sep-line"></div>
+                </div>
+            `;
+            
+            const customChips = savedCustom.map(sub => {
+                const isSelected = selectedSubjects.includes(sub);
+                return `<div class="subject-chip ${isSelected ? 'selected' : ''}" onclick="toggleSubject('${sub.replace(/'/g, "\\'")}')">
+                    <span class="check-icon">✓</span> ${sub}
+                </div>`;
+            }).join('');
+            
+            container.innerHTML += `
+                <div class="subjects-group" data-stage="custom">
+                    <div class="subjects-group-header">
+                        <span>➕</span>
+                        <span>مواد مخصصة أضفتها</span>
+                        <span class="count-badge">${selectedCustomCount} / ${savedCustom.length}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${customChips}
+                    </div>
+                </div>
+            `;
+        }
+
+        updateSelectedSubjectsPreview();
+    }
+
+    function toggleSubject(subject) {
+        const idx = selectedSubjects.indexOf(subject);
+        if(idx > -1) selectedSubjects.splice(idx, 1);
+        else selectedSubjects.push(subject);
+        renderSubjectsForSelectedStages();
+    }
+
+    function updateSelectedSubjectsPreview() {
+        const preview = document.getElementById('selectedSubjectsPreview');
+        const tags = document.getElementById('selectedSubjectsTags');
+        if(selectedSubjects.length > 0) {
+            preview.classList.remove('hidden');
+            tags.innerHTML = selectedSubjects.map(s => {
+                const stageKey = getStageForSubject(s);
+                return `<span class="subject-display-tag" data-stage="${stageKey}">${s}</span>`;
+            }).join('');
+        } else {
+            preview.classList.add('hidden');
+        }
+    }
+
+    function toggleCustomSubject() {
+        document.getElementById('customSubjectWrapper').classList.toggle('active');
+        if(document.getElementById('customSubjectWrapper').classList.contains('active')) {
+            document.getElementById('customSubjectInput').focus();
+        }
+    }
+
+    function addCustomSubject() {
+        const input = document.getElementById('customSubjectInput');
+        const val = input.value.trim();
+        if(!val) { alert('اكتب اسم المادة أولاً'); return; }
+        if(selectedSubjects.includes(val)) { alert('هذه المادة مضافة بالفعل'); return; }
+        
+        const savedCustom = JSON.parse(localStorage.getItem('custom_subjects') || '[]');
+        if(!savedCustom.includes(val)) {
+            savedCustom.push(val);
+            localStorage.setItem('custom_subjects', JSON.stringify(savedCustom));
+        }
+        
+        selectedSubjects.push(val);
+        input.value = '';
+        document.getElementById('customSubjectWrapper').classList.remove('active');
+        renderSubjectsForSelectedStages();
+    }
+
+    function checkTeacherProfile() {
+        if (currentTeacherProfile && currentTeacherProfile.teacherName) showView('teacherDashboardView');
+        else showView('teacherProfileView');
+    }
+
+    window.onload = function() {
+        if(currentTeacherProfile && currentTeacherProfile.teacherName) {
+            document.getElementById('teacherName').value = currentTeacherProfile.teacherName || '';
+            if(currentTeacherProfile.phone) {
+                document.getElementById('teacherPhone').value = currentTeacherProfile.phone;
+            }
+            if(currentTeacherProfile.gov) document.getElementById('govName').value = currentTeacherProfile.gov;
+            if(currentTeacherProfile.teacherTitle) {
+                document.querySelector(`input[name="teacherTitle"][value="${currentTeacherProfile.teacherTitle}"]`).checked = true;
+                applyTheme(currentTeacherProfile.teacherTitle);
+            }
+            if(currentTeacherProfile.stages && Array.isArray(currentTeacherProfile.stages)) {
+                selectedStages = [...currentTeacherProfile.stages];
+                updateStageButtonsUI();
+            }
+            
+            if(currentTeacherProfile.grades && Array.isArray(currentTeacherProfile.grades)) {
+                selectedGrades = currentTeacherProfile.grades.filter(grade => {
+                    const stage = getStageForGrade(grade);
+                    return selectedStages.includes(stage) || stage === 'custom';
+                });
+            }
+            if(currentTeacherProfile.subjects && Array.isArray(currentTeacherProfile.subjects)) {
+                selectedSubjects = currentTeacherProfile.subjects.filter(sub => {
+                    const stage = getStageForSubject(sub);
+                    return selectedStages.includes(stage) || stage === 'custom';
+                });
+            }
+        } else {
+            applyTheme('مستر');
+        }
+        renderGradesForSelectedStages();
+        renderSubjectsForSelectedStages();
+        renderDaysSelector();
+        
+        document.getElementById('startTime')?.addEventListener('change', updateSchedulePreview);
+        document.getElementById('endTime')?.addEventListener('change', updateSchedulePreview);
+    };
+
+    function handleTeacherProfile(e) {
+        e.preventDefault();
+        
+        const phone = document.getElementById('teacherPhone').value.trim();
+        
+        if(!phone) { alert('⚠️ يرجى إدخال رقم الهاتف'); return; }
+        if(!/^01[0-9]{9}$/.test(phone)) { 
+            alert('⚠️ رقم الهاتف غير صحيح\nيجب أن يبدأ بـ 01 ويتكون من 11 رقم'); 
+            return; 
+        }
+        
+        if(selectedStages.length === 0) { alert('⚠️ يرجى اختيار مرحلة دراسية واحدة على الأقل'); return; }
+        if(selectedGrades.length === 0) { alert('⚠️ يرجى اختيار صف دراسي واحد على الأقل'); return; }
+        if(selectedSubjects.length === 0) { alert('⚠️ يرجى اختيار مادة دراسية واحدة على الأقل'); return; }
+        
+        const title = document.querySelector('input[name="teacherTitle"]:checked').value;
+        
+        currentTeacherProfile = {
+            teacherTitle: title,
+            teacherName: document.getElementById('teacherName').value,
+            phone: phone,
+            stages: [...selectedStages],
+            grades: [...selectedGrades],
+            subjects: [...selectedSubjects],
+            gov: document.getElementById('govName').value
+        };
+        localStorage.setItem('draft_teacher_profile', JSON.stringify(currentTeacherProfile));
+        applyTheme(title);
+        
+        alert('✅ تم حفظ بياناتك بنجاح!');
+        showView('teacherDashboardView');
+    }
+
+    function renderClassSubjectSelector() {
+        const container = document.getElementById('classSubjectContainer');
+        if(!container || !currentTeacherProfile) return;
+        
+        const subjects = currentTeacherProfile.subjects || [];
+        
+        container.innerHTML = subjects.map(sub => {
+            const stageKey = getStageForSubject(sub);
+            return `
+            <label>
+                <input type="radio" name="classSubject" value="${sub}" class="hidden">
+                <div class="subject-chip" data-stage="${stageKey}">${sub}</div>
+            </label>
+            `;
+        }).join('');
+        
+        container.querySelectorAll('input[name="classSubject"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                container.querySelectorAll('.subject-chip').forEach(chip => chip.classList.remove('selected'));
+                if(this.checked) this.nextElementSibling.classList.add('selected');
+            });
+        });
+        
+        const firstRadio = container.querySelector('input[name="classSubject"]');
+        if(firstRadio) {
+            firstRadio.checked = true;
+            firstRadio.nextElementSibling.classList.add('selected');
+        }
+    }
+
+    function renderClassGradeSelector() {
+        const container = document.getElementById('classGradeContainer');
+        if(!container || !currentTeacherProfile) return;
+        
+        const grades = currentTeacherProfile.grades || [];
+        
+        container.innerHTML = grades.map(grade => {
+            const stageKey = getStageForGrade(grade);
+            return `
+            <label>
+                <input type="radio" name="classGrade" value="${grade}" class="hidden">
+                <div class="subject-chip" data-stage="${stageKey}">${grade}</div>
+            </label>
+            `;
+        }).join('');
+        
+        container.querySelectorAll('input[name="classGrade"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                container.querySelectorAll('.subject-chip').forEach(chip => chip.classList.remove('selected'));
+                if(this.checked) this.nextElementSibling.classList.add('selected');
+            });
+        });
+        
+        const firstRadio = container.querySelector('input[name="classGrade"]');
+        if(firstRadio) {
+            firstRadio.checked = true;
+            firstRadio.nextElementSibling.classList.add('selected');
+        }
+    }
+
+    const originalShowView = showView;
+    showView = function(viewId) {
+        originalShowView(viewId);
+        if(viewId === 'teacherClassDetailsView') {
+            renderClassSubjectSelector();
+            renderClassGradeSelector();
+            renderDaysSelector();
+            updateSchedulePreview();
+        }
+    };
+
+    function handleAddClass(e) {
+        e.preventDefault();
+        const lat = document.getElementById('teacherLat').value;
+        const lng = document.getElementById('teacherLng').value;
+        if(!lat || !lng) { alert("يرجى تحديد نقطة الدرس على الخريطة أولاً!"); return; }
+        
+        const selectedSubjectEl = document.querySelector('input[name="classSubject"]:checked');
+        if(!selectedSubjectEl) { alert("يرجى اختيار المادة الدراسية"); return; }
+        
+        const selectedGradeEl = document.querySelector('input[name="classGrade"]:checked');
+        if(!selectedGradeEl) { alert("يرجى اختيار الصف الدراسي"); return; }
+        
+        if(selectedDays.length === 0) { alert("يرجى اختيار يوم واحد على الأقل"); return; }
+        
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        
+        if(!startTime || !endTime) { alert("يرجى تحديد وقت الحصة"); return; }
+        
+        const [sh, sm] = startTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        if((eh * 60 + em) <= (sh * 60 + sm)) {
+            alert("⚠️ وقت النهاية يجب أن يكون بعد وقت البداية");
+            return;
+        }
+        
+        const orderedDays = WEEK_DAYS.filter(d => selectedDays.includes(d.key));
+        const daysNames = orderedDays.map(d => d.name);
+        
+        const newClass = {
+            id: Date.now().toString(),
+            teacherTitle: currentTeacherProfile.teacherTitle,
+            teacherName: currentTeacherProfile.teacherName,
+            phone: currentTeacherProfile.phone,
+            subjects: currentTeacherProfile.subjects || [],
+            grades: currentTeacherProfile.grades || [],
+            subject: selectedSubjectEl.value,
+            grade: selectedGradeEl.value,
+            gov: currentTeacherProfile.gov,
+            stage: selectedGradeEl.value,
+            groupName: document.getElementById('groupName').value, 
+            gender: document.querySelector('input[name="targetGender"]:checked').value,
+            type: document.querySelector('input[name="classType"]:checked').value,
+            location: document.getElementById('centerName').value,
+            days: selectedDays,
+            daysNames: daysNames,
+            startTime: startTime,
+            endTime: endTime,
+            maxCapacity: parseInt(document.getElementById('maxCapacity').value),
+            lat: parseFloat(lat), lng: parseFloat(lng),
+            bookedBoys: 0, bookedGirls: 0,
+            students: [] 
+        };
+
+        classesDB.push(newClass);
+        localStorage.setItem('tutoring_classes_v15', JSON.stringify(classesDB));
+        
+        alert('✅ تم إضافة ونشر المجموعة بنجاح!');
+        document.getElementById('addClassForm').reset();
+        document.getElementById('teacherLat').value = ''; document.getElementById('teacherLng').value = '';
+        document.querySelector('input[name="targetGender"][value="both"]').checked = true;
+        document.querySelector('input[name="classType"][value="center"]').checked = true;
+        
+        selectedDays = [];
+        renderDaysSelector();
+        document.getElementById('startTime').value = '16:00';
+        document.getElementById('endTime').value = '18:00';
+        updateSchedulePreview();
+        
+        const status = document.getElementById('teacherLocationStatus');
+        status.innerText = "❌ لم يتم تحديد الموقع بعد (مطلوب)"; status.className = "text-xs text-rose-600 font-bold text-center";
+
+        updateLocationPlaceholder();
+        showView('teacherDashboardView'); 
+    }
+
+    let classesDB = JSON.parse(localStorage.getItem('tutoring_classes_v15')) || [];
+    let currentTeacherProfile = JSON.parse(localStorage.getItem('draft_teacher_profile')) || null;
+    let currentOpenedGroupId = null;
+
+    function renderTeacherDashboard() {
+        if(!currentTeacherProfile) return;
+        
+        document.getElementById('dashTeacherName').innerText = `مرحباً، ${currentTeacherProfile.teacherTitle} ${currentTeacherProfile.teacherName}`;
+        
+        let stagesText = '';
+        if(currentTeacherProfile.stages && currentTeacherProfile.stages.length > 0) {
+            stagesText = currentTeacherProfile.stages.map(s => EDUCATION_STRUCTURE[s]?.name || '').join(' + ');
+        }
+        document.getElementById('dashTeacherSubject').innerText = `🎓 ${stagesText} | 📍 محافظة: ${currentTeacherProfile.gov}`;
+        
+        document.getElementById('dashTeacherPhone').innerText = currentTeacherProfile.phone || '--';
+        
+        const gradesTags = document.getElementById('dashGradesTags');
+        const grades = currentTeacherProfile.grades || [];
+        gradesTags.innerHTML = grades.map(g => {
+            const stageKey = getStageForGrade(g);
+            let colorClass = 'bg-[var(--primary-50)] text-[var(--primary-700)] border-[var(--primary-200)]';
+            if (stageKey === 'kg') colorClass = 'bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]';
+            if (stageKey === 'primary') colorClass = 'bg-[#D1FAE5] text-[#065F46] border-[#6EE7B7]';
+            if (stageKey === 'prep') colorClass = 'bg-[#DBEAFE] text-[#1E40AF] border-[#93C5FD]';
+            if (stageKey === 'secondary') colorClass = 'bg-[#EDE9FE] text-[#5B21B6] border-[#C4B5FD]';
+            return `<span class="inline-block ${colorClass} border px-2 py-1 rounded-full text-[11px] font-black mr-1 mt-1">🎯 ${g}</span>`;
+        }).join('');
+        
+        const subjectsTags = document.getElementById('dashSubjectsTags');
+        const subjects = currentTeacherProfile.subjects || [];
+        subjectsTags.innerHTML = subjects.map(s => {
+            const stageKey = getStageForSubject(s);
+            let colorClass = 'bg-[var(--primary-50)] text-[var(--primary-700)] border-[var(--primary-200)]';
+            if (stageKey === 'kg') colorClass = 'bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]';
+            if (stageKey === 'primary') colorClass = 'bg-[#D1FAE5] text-[#065F46] border-[#6EE7B7]';
+            if (stageKey === 'prep') colorClass = 'bg-[#DBEAFE] text-[#1E40AF] border-[#93C5FD]';
+            if (stageKey === 'secondary') colorClass = 'bg-[#EDE9FE] text-[#5B21B6] border-[#C4B5FD]';
+            return `<span class="inline-block ${colorClass} border px-2 py-1 rounded-full text-[11px] font-black mr-1 mt-1">📚 ${s}</span>`;
+        }).join('');
+
+        const container = document.getElementById('teacherClassesList');
+        container.innerHTML = '';
+
+        if (classesDB.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-slate-400 font-black bg-slate-50 rounded-2xl border-2 border-slate-200 border-dashed">لا توجد لديك مجموعات حتى الآن.<br>اضغط على إضافة مجموعة للبدء.</div>';
+            return;
+        }
+
+        const reversedDB = [...classesDB].reverse();
+
+        reversedDB.forEach(cls => {
+            const totalBooked = (cls.bookedBoys || 0) + (cls.bookedGirls || 0);
+            const isFull = totalBooked >= cls.maxCapacity;
+            
+            const stageKey = getStageForGrade(cls.grade) !== 'custom' ? getStageForGrade(cls.grade) : getStageForSubject(cls.subject);
+
+            // تحديد لون الهيدر الكامل للبطاقة
+            let headerBg = '';
+            if (stageKey === 'kg') headerBg = 'linear-gradient(135deg, #F59E0B, #B45309)';
+            else if (stageKey === 'primary') headerBg = 'linear-gradient(135deg, #10B981, #047857)';
+            else if (stageKey === 'prep') headerBg = 'linear-gradient(135deg, #3B82F6, #1E40AF)';
+            else if (stageKey === 'secondary') headerBg = 'linear-gradient(135deg, #8B5CF6, #5B21B6)';
+            else headerBg = 'linear-gradient(135deg, #EF4444, #991B1B)';
+
+            let gradeColorClass = 'bg-[var(--primary-50)] text-[var(--primary-700)] border-[var(--primary-200)]';
+            if (stageKey === 'kg') gradeColorClass = 'bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]';
+            if (stageKey === 'primary') gradeColorClass = 'bg-[#D1FAE5] text-[#065F46] border-[#6EE7B7]';
+            if (stageKey === 'prep') gradeColorClass = 'bg-[#DBEAFE] text-[#1E40AF] border-[#93C5FD]';
+            if (stageKey === 'secondary') gradeColorClass = 'bg-[#EDE9FE] text-[#5B21B6] border-[#C4B5FD]';
+
+            const gradeBadge = `<span class="inline-block ${gradeColorClass} border px-2 py-0.5 rounded-full text-[11px] font-black">🎯 ${cls.grade || cls.stage || ''}</span>`;
+            
+            const subStageKey = getStageForSubject(cls.subject);
+            let subColorClass = 'bg-[var(--primary-50)] text-[var(--primary-700)] border-[var(--primary-200)]';
+            if (subStageKey === 'kg') subColorClass = 'bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]';
+            if (subStageKey === 'primary') subColorClass = 'bg-[#D1FAE5] text-[#065F46] border-[#6EE7B7]';
+            if (subStageKey === 'prep') subColorClass = 'bg-[#DBEAFE] text-[#1E40AF] border-[#93C5FD]';
+            if (subStageKey === 'secondary') subColorClass = 'bg-[#EDE9FE] text-[#5B21B6] border-[#C4B5FD]';
+
+            const subjectBadge = `<span class="inline-block ${subColorClass} border px-2 py-0.5 rounded-full text-[11px] font-black">📚 ${cls.subject || ''}</span>`;
+            
+            let locationIcon = '';
+            if (cls.type === 'center') locationIcon = '🏫'; 
+            else if (cls.type === 'teacher_home') locationIcon = '🏡'; 
+            else if (cls.type === 'student_home') locationIcon = '📍';
+
+            let genderBadge = '';
+            if (cls.gender === 'boys') genderBadge = `<span class="gender-badge boys">👦 ولاد فقط</span>`;
+            else if (cls.gender === 'girls') genderBadge = `<span class="gender-badge girls">👧 بنات فقط</span>`;
+            else genderBadge = `<span class="gender-badge both">👫 ولاد وبنات</span>`;
+            
+            let scheduleText = '';
+            if(cls.daysNames && cls.daysNames.length > 0 && cls.startTime && cls.endTime) {
+                scheduleText = `${cls.daysNames.join(' - ')} | من ${formatTime(cls.startTime)} إلى ${formatTime(cls.endTime)}`;
+            } else if(cls.times) {
+                scheduleText = cls.times;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'class-card cursor-default';
+            card.setAttribute('data-stage', stageKey);
+            
+            card.innerHTML = `
+                <div class="cursor-pointer flex flex-col h-full" onclick="openGroupDetails('${cls.id}')">
+                    
+                    <!-- الهيدر الملون بلون صريح وقوي -->
+                    <div style="background: ${headerBg};" class="px-4 py-3 flex justify-between items-center text-white border-b border-slate-200 shadow-sm">
+                        <h4 class="text-[16px] font-black text-white">👥 ${cls.groupName}</h4>
+                        <div class="text-white opacity-90 text-xl">➔</div>
+                    </div>
+                    
+                    <!-- محتوى البطاقة -->
+                    <div class="p-4 pb-0">
+                        <div class="flex flex-wrap gap-1.5 mb-3">${gradeBadge} ${subjectBadge} ${genderBadge}</div>
+                        
+                        <div class="space-y-2 mb-3">
+                            <div class="flex items-center gap-2 text-sm text-slate-700 font-bold">
+                                <span class="bg-slate-100 p-1.5 rounded">${locationIcon}</span> <span class="truncate">${cls.location}</span>
+                            </div>
+                            <div class="flex items-start gap-2 text-sm text-slate-700 font-bold">
+                                <span class="bg-slate-100 p-1.5 rounded">⏰</span> 
+                                <span class="text-xs leading-relaxed">${scheduleText}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2 mb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-black text-slate-700">عدد الطلاب المحجوزين:</span>
+                                <span class="text-sm font-black ${isFull ? 'text-rose-600' : 'text-[var(--primary-700)]'}" dir="ltr">${totalBooked} / ${cls.maxCapacity}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="flex-1 text-center text-[var(--primary-800)] font-bold text-xs bg-[var(--primary-50)] py-1 rounded border border-[var(--primary-200)]">👦 ولاد: ${cls.bookedBoys || 0}</span>
+                                <span class="flex-1 text-center text-[var(--primary-800)] font-bold text-xs bg-[var(--primary-50)] py-1 rounded border border-[var(--primary-200)]">👧 بنات: ${cls.bookedGirls || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 pb-4">
+                    <button onclick="deleteGroup('${cls.id}')" class="w-full bg-rose-50 text-rose-600 border border-rose-200 font-black py-2 rounded-lg text-xs hover:bg-rose-100 active:scale-95 transition-all">
+                        🗑️ إلغاء المجموعة
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function deleteGroup(classId) {
+        if(confirm("⚠️ تحذير: هل أنت متأكد أنك تريد إلغاء هذه المجموعة نهائياً؟\n\nسيتم حذف بيانات المجموعة وجميع الطلاب المحجوزين بداخلها ولن تتمكن من استعادتها.")) {
+            classesDB = classesDB.filter(c => c.id !== classId);
+            localStorage.setItem('tutoring_classes_v15', JSON.stringify(classesDB));
+            alert('تم إلغاء المجموعة بنجاح.');
+            renderTeacherDashboard();
+        }
+    }
+
+    function openGroupDetails(classId) {
+        const cls = classesDB.find(c => c.id === classId);
+        if(!cls) return;
+
+        currentOpenedGroupId = classId;
+        document.getElementById('groupDetailName').innerText = `${cls.groupName} - ${cls.grade || ''} - ${cls.subject || ''}`;
+        const totalBooked = (cls.bookedBoys || 0) + (cls.bookedGirls || 0);
+        document.getElementById('groupDetailTotal').innerText = `${totalBooked} / ${cls.maxCapacity}`;
+
+        const container = document.getElementById('excelTablesContainer');
+        container.innerHTML = '';
+
+        if (!cls.students) cls.students = [];
+
+        const boysList = cls.students.filter(s => s.gender === 'boy');
+        const girlsList = cls.students.filter(s => s.gender === 'girl');
+
+        if (cls.gender === 'boys' || cls.gender === 'both') {
+            let trs = boysList.map((s, idx) => `
+                <tr>
+                    <td class="text-center w-6 text-xs">${idx + 1}</td>
+                    <td>${s.name}</td>
+                    <td dir="ltr" class="text-center font-bold en-num">${s.phone}</td>
+                    <td class="text-center">
+                        <button onclick="openPaymentModal('${cls.id}', '${s.id}')" class="text-[10px] bg-white text-blue-700 px-2 py-1 rounded shadow-sm border border-blue-200 hover:bg-blue-50 transition-colors">الدفع 💳</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            if (boysList.length === 0) trs = `<tr><td colspan="4" class="text-center py-4 text-slate-400">لا يوجد حجوزات للأولاد حتى الآن.</td></tr>`;
+
+            const boysTable = `
+                <div class="student-col">
+                    <div class="col-header boys">
+                        <span>👦 كشف الأولاد</span>
+                        <span class="badge-white">${cls.bookedBoys || 0}</span>
+                    </div>
+                    <table class="excel-table table-boys">
+                        <thead><tr><th>#</th><th>الاسم</th><th class="text-center">الهاتف</th><th class="text-center">السجل</th></tr></thead>
+                        <tbody>${trs}</tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML += boysTable;
+        }
+
+        if (cls.gender === 'girls' || cls.gender === 'both') {
+            let trs = girlsList.map((s, idx) => `
+                <tr>
+                    <td class="text-center w-6 text-xs">${idx + 1}</td>
+                    <td>${s.name}</td>
+                    <td dir="ltr" class="text-center font-bold en-num">${s.phone}</td>
+                    <td class="text-center">
+                        <button onclick="openPaymentModal('${cls.id}', '${s.id}')" class="text-[10px] bg-white text-pink-700 px-2 py-1 rounded shadow-sm border border-pink-200 hover:bg-pink-50 transition-colors">الدفع 💳</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            if (girlsList.length === 0) trs = `<tr><td colspan="4" class="text-center py-4 text-slate-400">لا يوجد حجوزات للبنات حتى الآن.</td></tr>`;
+
+            const girlsTable = `
+                <div class="student-col">
+                    <div class="col-header girls">
+                        <span>👧 كشف البنات</span>
+                        <span class="badge-white">${cls.bookedGirls || 0}</span>
+                    </div>
+                    <table class="excel-table table-girls">
+                        <thead><tr><th>#</th><th>الاسم</th><th class="text-center">الهاتف</th><th class="text-center">السجل</th></tr></thead>
+                        <tbody>${trs}</tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML += girlsTable;
+        }
+
+        showView('groupDetailsView');
+    }
+
+    function openManualAddModal() {
+        if(!currentOpenedGroupId) return;
+        const cls = classesDB.find(c => c.id === currentOpenedGroupId);
+        const totalBooked = (cls.bookedBoys || 0) + (cls.bookedGirls || 0);
+        
+        if (totalBooked >= cls.maxCapacity) { alert('عذراً، هذه المجموعة اكتمل عددها تماماً!'); return; }
+
+        document.getElementById('manualClassId').value = currentOpenedGroupId;
+        const genderSelect = document.getElementById('manualGenderSelect');
+        if(cls.gender === 'boys') { genderSelect.innerHTML = `<label><input type="radio" name="manualStudentGender" value="boy" checked class="hidden"><div class="option-btn">👦 ولد</div></label>`; } 
+        else if (cls.gender === 'girls') { genderSelect.innerHTML = `<label><input type="radio" name="manualStudentGender" value="girl" checked class="hidden"><div class="option-btn">👧 بنت</div></label>`; } 
+        else {
+            genderSelect.innerHTML = `
+                <label><input type="radio" name="manualStudentGender" value="boy" checked class="hidden"><div class="option-btn">👦 ولد</div></label>
+                <label><input type="radio" name="manualStudentGender" value="girl" class="hidden"><div class="option-btn">👧 بنت</div></label>
+            `;
+        }
+
+        document.getElementById('manualAddModal').style.display = 'flex';
+    }
+
+    function closeManualAddModal() {
+        document.getElementById('manualAddModal').style.display = 'none';
+        document.getElementById('manualStudentName').value = '';
+        document.getElementById('manualStudentPhone').value = '';
+    }
+
+    function handleManualAdd(e) {
+        e.preventDefault();
+        const classId = document.getElementById('manualClassId').value;
+        const name = document.getElementById('manualStudentName').value;
+        const phone = document.getElementById('manualStudentPhone').value;
+        const gender = document.querySelector('input[name="manualStudentGender"]:checked').value;
+
+        const classIndex = classesDB.findIndex(c => c.id === classId);
+        if (classIndex > -1) {
+            const cls = classesDB[classIndex];
+            if (!cls.students) cls.students = [];
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+
+            cls.students.push({
+                id: 'std_' + Date.now(),
+                name: name, phone: phone, gender: gender, date: dateStr,
+                payments: { term1: false, term2: false, months: {}, sessions: 0, weeks: 0 }
+            });
+
+            if (gender === 'boy') cls.bookedBoys = (cls.bookedBoys || 0) + 1;
+            else if (gender === 'girl') cls.bookedGirls = (cls.bookedGirls || 0) + 1;
+
+            localStorage.setItem('tutoring_classes_v15', JSON.stringify(classesDB));
+            alert('✅ تم إضافة الطالب وتحديث العداد بنجاح!');
+            closeManualAddModal();
+            openGroupDetails(classId); 
+        }
+    }
+
+    const monthsArray = ['أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس','أبريل','مايو'];
+    let currentPayClassId = null;
+    let currentPayStudentId = null;
+
+    function openPaymentModal(classId, studentId) {
+        currentPayClassId = classId;
+        currentPayStudentId = studentId;
+
+        const cls = classesDB.find(c => c.id === classId);
+        const student = cls.students.find(s => s.id === studentId);
+
+        document.getElementById('paymentStudentName').innerText = `الطالب: ${student.name}`;
+
+        if(!student.payments) student.payments = { term1: false, term2: false, months: {}, sessions: 0, weeks: 0 };
+        const p = student.payments;
+
+        document.getElementById('payTerm1').checked = p.term1;
+        document.getElementById('payTerm2').checked = p.term2;
+        document.getElementById('paySessions').value = p.sessions || 0;
+        document.getElementById('payWeeks').value = p.weeks || 0;
+
+        const monthContainer = document.getElementById('monthCheckboxes');
+        monthContainer.innerHTML = monthsArray.map((m, idx) => `
+            <label class="bg-white border border-slate-300 p-2 rounded flex items-center justify-between cursor-pointer hover:bg-slate-50">
+                ${m} <input type="checkbox" id="payMonth_${idx}" class="payment-checkbox" ${p.months[idx] ? 'checked' : ''}>
+            </label>
+        `).join('');
+
+        document.getElementById('paymentModal').style.display = 'flex';
+    }
+
+    function saveStudentPayment(e) {
+        e.preventDefault();
+        const cls = classesDB.find(c => c.id === currentPayClassId);
+        const student = cls.students.find(s => s.id === currentPayStudentId);
+
+        student.payments.term1 = document.getElementById('payTerm1').checked;
+        student.payments.term2 = document.getElementById('payTerm2').checked;
+        student.payments.sessions = parseInt(document.getElementById('paySessions').value) || 0;
+        student.payments.weeks = parseInt(document.getElementById('payWeeks').value) || 0;
+
+        monthsArray.forEach((m, idx) => {
+            student.payments.months[idx] = document.getElementById(`payMonth_${idx}`).checked;
+        });
+
+        localStorage.setItem('tutoring_classes_v15', JSON.stringify(classesDB));
+        alert('✅ تم حفظ السجل المالي للطالب بنجاح!');
+        closePaymentModal();
+    }
+
+    function closePaymentModal() {
+        document.getElementById('paymentModal').style.display = 'none';
+    }
+</script>
+</body>
+</html>
